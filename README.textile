@@ -4,4 +4,4 @@ At the moment GreenScript provides <a href="http://www.playframework.org">PlayFr
 
 For GreenScript Play plugin document, please refer to <a href="http://github.com/greenlaw110/greenscript/blob/master/java/play/documentation/manual/home.textile">here</a>
 
-GreenScript is distributed under <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache 2 License</a>. GreenScript Play plugin version before v1.2 is distributed under MIT license. For GreenScript Play Plugin version before v1.2, please go to http://github.com/greenlaw110/play-greenscript
+GreenScript is distributed under <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache 2 License</a>. GreenScript Play plugin version before v1.2 is distributed under MIT license. For GreenScript Play Plugin version before v1.2, please go to <a href="http://github.com/greenlaw110/play-greenscript">here</a>
