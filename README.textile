@@ -1,0 +1,7 @@
+GreenScript aims to provide a tool for web developer to manage javascript and css dependencies and simplify the rendering of javascript/css file references in HTML file. The tool also provides facility to help javascript and css file minimizing.
+
+At the moment GreenScript provides <a href="http://www.playframework.org">PlayFramework!</a> plugin only. Moving forward, I will try to get it support to other Java or even other language web frameworks.
+
+For GreenScript Play plugin document, please refer to <a href="http://github.com/greenlaw110/greenscript/blob/master/java/play/documentation/manual/home.textile">here</a>
+
+GreenScript is distributed under <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache 2 License</a>. GreenScript Play plugin version before v1.2 is distributed under MIT license. For GreenScript Play Plugin version before v1.2, please go to http://github.com/greenlaw110/play-greenscript
