@@ -1,0 +1,16 @@
+# This file defines all module routes (Higher priority routes first)
+#
+# import these routes in the main app as :
+# *     /                       module:storage
+#
+# ~~~~
+
+GET /? greenscript.Configurator.configure
+GET /configure greenscript.Configurator.configure
+GET /conf greenscript.Configurator.configure
+GET /setting greenscript.Configurator.configure
+PUT /conf greenscript.Configurator.update
+
+GET /js/ staticDir:public/javascripts
+GET /css/ staticDir:public/stylesheets
+

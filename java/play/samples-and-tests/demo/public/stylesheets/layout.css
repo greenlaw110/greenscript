@@ -1,0 +1,136 @@
+/** Default HTML Element layout **/
+body, html {
+    margin: 0;
+    padding: 0;
+    background: #444444;
+    font-family: 'Lucida Grande','Trebuchet MS',Arial,Helvetica,sans-serif;
+    font-size: 9pt;
+}
+
+h1,h2,h3,h4,h5 {
+    margin-bottom: 10px;
+}
+h1{font-weight: bold; font-family: 'Garamond', Arial,Helvetica,sans-serif;}
+h2{font-family: 'Arial Black',Arial,Helvetica,sans-serif;}
+h1 {font-size: 260%;}
+h2 {font-size: 180%;}
+h3 {font-size: 150%;}
+h4 {font-size: 120%;}
+h4 {font-size: 100%;}
+
+dl, dt, dd {
+    position: relative;
+    float: left;
+}
+
+dl {
+    margin: 1em;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+    padding: .5em;
+}
+
+dt {
+    clear: left;
+    font-weight: bold;
+    text-align: right;
+    width: 6em;
+    margin-right: 1em;
+    margin-bottom: 1em;
+}
+
+dt:after {
+    content: ':'
+}
+
+p {margin: 2px 0 20px 0;}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border-right: 1px solid #ccc;
+}
+
+th {
+    text-align: left;
+    padding: 5px 10px;
+    font-size: 14px;
+    border: 1px solid #333;
+    border-bottom: 1px solid #ccc;
+}
+
+td {
+    border-left: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    padding: 8px 10px;
+    vertical-align: middle;
+}
+
+tfoot td {text-align:right;}
+
+
+/** Page layout **/
+
+#header {
+	padding: 10px 60px;
+	background: #111;
+	margin-bottom: 10px;
+	position: relative;
+}
+
+#header p {
+	margin: 5px 0;
+}
+
+#content {
+	margin: 20px 60px;
+	padding: 20px;
+	min-height: 400px;
+	position: relative;
+}
+
+#footer {
+	margin: 0 60px;
+	color: #999;
+}
+
+#footer a {
+	color: gold;
+}
+
+#spinner {
+	position:absolute;
+	top:30%;
+	left:50%;
+	display:none;
+}
+
+div.error, div.success {
+    font-weight: bold;
+	margin-top: -10px;
+    margin-bottom: 10px;
+	padding: 4px;
+}
+
+.actions {
+    display:block;
+    position:relative;
+    width:auto;
+    margin:0 auto;
+    padding: 15px;
+    clear:both;
+}
+.actions li, .actions form {
+    display:inline;
+    margin-right: 0em;
+}
+
+
+/** hacking **/
+.clearfix:after {
+      content: ".";
+      display: block;
+      height: 0;
+      clear: both;
+      visibility: hidden;
+}

@@ -1,0 +1,67 @@
+#{extends 'templates/form_layout.html' /}
+
+#{set 'formTitle'}
+Add Customer
+#{/set}
+
+*{test CDN}*
+#{greenscript.js 'http://www.google.com/jsapi' /}
+
+<form action="/post" method="post">
+    <div class="fields">
+        <div>
+            <label>First Name</label>
+            <input type="text" id="first_name" name="firstName"/>
+            <span class="help">required</span>
+        </div>
+        <div>
+            <label>Last Name</label>
+            <input type="text" id="last_name" name="lastName"/>
+            <span class="help">required</span>
+        </div>
+        <div>
+            <label>Birthday</label>
+            <input class="date" type="text" name="birthday"/>
+        </div>
+        <div>
+            <label>Street</label>
+            <input type="text" name="street"/>
+        </div>
+        <div>
+            <label>State</label>
+            <input type="text" name="state"/>
+        </div>
+        <div>
+            <label>Country</label>
+            <input type="text" name="country"/>
+        </div>
+        <div>
+            <label>Email</label>
+            <input id="email" type="text" name="email"/>
+        </div>
+        <div>
+            <label>Phone</label>
+            <input type="text" name="phone" class="p-mask" data-pMask="{type:'fixed', mask:'[99.999.999-x]',stripMask:false, stripMaskOnSubmit:false}"/>
+        </div>
+    </div>
+    <ul class="actions">    
+        <li><input type="submit" value="Save"/></li>
+        <li><input type="button" value="Reset"/></li>
+    </ul>
+</form>
+
+#{greenscript.css 'datepicker' /}
+#{greenscript.js 'datepicker', output:'list' /}
+
+#{greenscript.js output:true}
+    var rule = ruleById('first_name');
+    rule.add(Validate.Presence)
+    rule = ruleById('last_name');
+    rule.add(Validate.Presence)
+    rule = ruleById('email');
+    rule.add(Validate.Email)
+    rule.add(Validate.Presence)
+    $$('input.date').each(function(el){
+        new Control.DatePicker(el, {icon: '/public/images/calendar.png', locale: 'en_iso8601'});
+    });
+#{/greenscript.js}

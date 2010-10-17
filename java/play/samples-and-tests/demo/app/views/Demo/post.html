@@ -1,0 +1,29 @@
+#{extends 'main.html' /}
+
+#{greenscript.css}
+dl > dt {
+    font-weight: bold;
+    color: #600;
+}
+#{/greenscript.css}
+
+<h2>Customer Info</h2>
+
+<dl class="clearfix">
+    <dt>First Name</dt>
+    <dd>${params.get("firstName")}</dd>
+    <dt>Last Name</dt>
+    <dd>${params.get("lastName")}</dd>
+    <dt>Birthday</dt>
+    <dd>${params.get("birthday")}</dd>
+    <dt>Address</dt>
+    <dd>${params.get("street")} ${params.get("state")} ${params.get("country")}</dd>
+    <dt>Email</dt>
+    <dd>${params.get("email")}</dd>
+    <dt>Phone</dt>
+    <dd>${params.get("phone")}</dd>
+</dl>
+
+<ul class="actions">
+    <li><a href="/" style="">Add another customer</a></li>
+</ul>

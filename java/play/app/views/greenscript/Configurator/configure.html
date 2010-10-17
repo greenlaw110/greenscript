@@ -1,0 +1,168 @@
+<!DOCTYPE html> 
+<html>
+    <head>
+        <title>GreenScript Configurator</title>
+        <link rel="stylesheet" type="text/css" href="css/screen.css" />
+        <link rel="stylesheet" type="text/css" href="css/jquery-ui-1.8.4.custom.css" />
+        <link rel="stylesheet" type="text/css" href="css/gs-conf.css" />
+        <script src="js/jquery-1.4.2-ui-1.8.4.custom.min.js" type="text/javascript"></script>
+        <!--[if lt IE 8]>
+        <link rel="stylesheet" href="css/ie.css" type="text/css" media="screen projection" >
+        <![endif]--> 
+        <script>
+        	$(function() {
+		    	#{if flash.success}
+		        	$("#flash").dialog({
+		        		modal: true,
+		        		buttons: {
+		        			Ok: function() {$(this).dialog("close");}
+		        		}
+		        	});
+		    	#{/if}
+        		$("#tabs").tabs();
+        		%{def tab = flash.get('tab')}%
+        		#{if tab}
+        		$('${tab}').trigger('click');
+        		#{/if}
+        	});
+        </script>
+    </head>
+    <body>
+    	#{if flash.success}
+    	<div id="flash" title="Setting Updated"> 
+			<p> 
+				<span class="ui-icon ui-icon-circle-check" style="float:left; margin:0 7px 50px 0;"></span> 
+				GreenScript setting updated sucessfully.
+			</p> 
+		</div>
+    	#{/if}
+    	<div id="main" class="container">
+    		<div class="span-24 last header">
+        		<h1><a href="http://github.com/greenlaw110/play-greenscript" style="text-decoration:none;color:black">GreenScript Configuration v1.2</a></h1>
+        	</div>
+	        <div id="tabs" class="span-24 last">
+	        	<ul>
+	        		<li><a href="#tab-settings">Plugin Settings</a></li>
+	        		<li><a href="#tab-paths">Path and URLs</a></li>
+	        		<li><a href="#tab-deps">css/js dependencies</a></li>
+	        	</ul>
+	        	<div id="tab-settings">
+	        		#{form @update(), enctype:'multipart/form-data'}
+	        			<fieldset>
+	        				<legend>Minimizing Setting</legend>
+			        		<p>
+			        			Use this part to dynamically change the behavior of GreenScript plugin. Usually
+			        			you want to turn on all these settings in a product environment. However, turning
+			        			off these settings can help developer easily debug javascript issues. Specifically,
+			        			turnning off cache enable developer to apply css changes on each request.
+			        		</p>
+        					<p>
+		        				<label for="minimize">Minimizing </label>
+	        					<span class="info">
+	        						If minimize is enabled, your js/css files will be merged to a 
+	        						single file as long as possible. <em>Note, if this option is
+	        						turned off, then <code>compress</code> and <code>cache</code>
+	        						options will not effect</em>
+	        					</span><br/>
+	        					<input type="checkbox" name="minimize" value="true" #{if minConf.getProperty('greenscript.minimize') == 'true'}checked="checked"#{/if}/>Minimize
+	        					<input type="hidden" name="minimize" value="false"/>
+	        				</p>
+	        				<p>
+		        				<label for="compress">Compressing </label>
+	        					<span class="info">
+	        						If compressing is enabled, your js/css files will be compressed (remove unnessessary 
+	        						blacks, comments, etc). <b>it is recommended to leave this option turned on</b> as you
+	        						can turn off "Minimizing" to disable compressing.
+	        					</span><br/>
+		        				<input type="checkbox" name="compress" value="true" #{if minConf.getProperty('greenscript.compress') == 'true'}checked="checked"#{/if}/>Compress
+		        				<input type="hidden" name="compress" value="false"/>
+		        			</p>
+		        			<p>
+	        					<label for="cache">Cache </label>
+	        					<span class="info">
+	        						If cache is enabled, the compressed version of your css/js files will be reused. <b>It is 
+	        						recommended to leave this option turned on</b> as you can turn off "Minimizing" to disable
+	        						cache. <span style="color: red; text-weight:bold">It is highly discouraged to leave this
+	        						option turn off while Minimizing turned on in a production environment</span>, your client
+	        						will probably encounter 404 error if you do so!
+	        					</span><br/>
+		        				<input type="checkbox" name="cache" value="true" #{if minConf.getProperty('greenscript.cache') == 'true'}checked="checked"#{/if}/>Cache
+		        				<input type="hidden" name="cache" value="false"/>
+		        			</p>
+		        			<p>
+		        				<input type="submit" value="submit"/>
+		        			</p>
+	        			</fieldset>
+	        		#{/form}
+	        	</div>
+	        	<div id="tab-paths">
+        			<p>
+        				dir and url settings are read only. You need to go to either your <code>"application.conf"</code> 
+        				to change the dir settings. You need to restart play server to apply your change 
+        			</p>
+	        		<fieldset>
+	        			<legend>dir settings</legend>
+	        			<p>
+	        				<label>Stylesheet (css) files location:</label>
+	        				<input type="text" value="${minConf.getProperty('greenscript.dir.css')}" disabled="disabled"/>
+	        			</p>
+	        			<p>
+	        				<label>Javascript (js) files location:</label>
+	        				<input type="text" value="${minConf.getProperty('greenscript.dir.js')}" disabled="disabled"/>
+	        			</p>
+	        			<p>
+	        				<label>Minimized(compressed) files location:</label>
+	        				<input type="text" value="${minConf.getProperty('greenscript.dir.minimized')}" disabled="disabled"/>
+	        			</p>
+	        		</fieldset>
+	        		<fieldset>
+	        			<legend>url settings</legend>
+	        			<p>
+	        				<label>Stylesheet (css) url path:</label>
+	        				<input type="text" value="${minConf.getProperty('greenscript.url.css')}" disabled="disabled"/>
+	        			</p>
+	        			<p>
+	        				<label>Javascript (js) url path:</label>
+	        				<input type="text" value="${minConf.getProperty('greenscript.url.js')}" disabled="disabled"/>
+	        			</p>
+	        			<p>
+	        				<label>Minimized(compressed) url path:</label>
+	        				<input type="text" value="${minConf.getProperty('greenscript.url.minimized')}" disabled="disabled"/>
+	        			</p>
+	        		</fieldset>
+	        	</div>
+	        	<div id="tab-deps">
+	        		<p>This part shows the css and javascript dependency relationships defined in your
+	        		   <code>greenscript.conf</code> file. <em>Note, this part is read only!</em> You should update
+	        		   your <code>greenscript.conf</code> file and click "reload" to apply your changes.</p>
+        			<h3><a href="#">CSS dependencies</a></h3>
+        			<div>
+        				<ul class="deps">
+        					#{list items:cssDeps, as: 'row'}
+        					<li class="row_parity">
+        						${row}
+        					</li>
+        					#{/list}
+        				</ul>
+        			</div>
+        			<h3><a href="#">JavaScript dependencies</a></h3>
+        			<div>
+        				<ul class="deps">
+        					#{list items:jsDeps, as: 'row'}
+        					<li class="row_parity">
+        						${row}
+        					</li>
+        					#{/list}
+        				</ul>
+        			</div>
+        			<p>
+        				<form action="@{reloadDependencies()}" method="post">
+        					<input type="submit" value="reload" title="reload dependency configuration"/>
+        				</form>
+        			</p>
+	        	</div>
+	        </div>
+		    <div style="text-align:center;padding-top:10px"><b>GreenScript Configurator v1.2</b> by <a href="mail:greenlaw110@gmail.com">greenlaw110@gmail.com</a></div>
+	    </div>
+    </body>
+</html>

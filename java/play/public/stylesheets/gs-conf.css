@@ -1,0 +1,27 @@
+fieldset {
+	padding: 1em 1em;
+}
+input[type=checkbox] {
+	margin-right: 1em;
+}
+input[type=submit] {
+	padding: .5em 1em;
+}
+label {
+	display: block;
+}
+span.info {
+	display: inline-block;
+	color: #666;
+	background: #FAFAFA;
+	border: 1px solid #BBBBBB;
+	padding: .5em;
+	margin: .2em 0;
+}
+ul.deps {
+	max-height: 240px;
+	overflow: auto;
+}
+#main > .header {
+	margin-top: 1em;
+}

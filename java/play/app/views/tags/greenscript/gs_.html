@@ -1,0 +1,61 @@
+%{
+    def caller = _caller
+    while (caller._caller) caller = caller._caller
+    def sm = (_type == 'css') ? caller.gsCssSession : caller.gsJsSession
+
+    def nameList
+    (_load) && (nameList = _load)
+    (_import) && (nameList = _import)
+    (_declare) && (nameList = _declare)
+    (_arg) && (nameList = _arg)
+    
+    if (nameList) sm.declare(nameList, _media, _browser)
+    
+    def output = _output || _loadAll || _loadMissing
+    def all = _all || _output ==~ /(?i)all/ || _loadMissing || _loadAll  
+    def withDeps = deps || _output ==~ /(?i)deps/
+}%
+
+#{if output}
+    #{if all}
+        *{default browser with default media}*
+#{greenscript.output_ sm:sm, nameList: nameList, withDeps: withDeps, all: all, media: null, browser: null, id: _id, charset: _charset, type: _type/}        
+        *{default browser with non-default media}*
+        #{list items: sm.getMedias(null), as: 'media'}
+#{greenscript.output_ sm:sm, nameList: nameList, withDeps: withDeps, all: all, media: media, browser: null, id: _id, charset: _charset, type: _type/}
+        #{/list}
+        *{non-default browsers}*
+        #{list items: sm.getBrowsers(), as: 'browser'}
+            #{list items: sm.getMedias(browser), as: 'media'}
+#{greenscript.output_ sm:sm, nameList: nameList, withDeps: withDeps, all: all, media: media, browser: browser, id: _id, charset: _charset, type: _type/}
+            #{/list}
+        #{/list}
+    #{/if}
+    #{else}
+#{greenscript.output_ sm:sm, nameList: nameList, withDeps: withDeps, all: all, media: media, browser: browser, id: _id, charset: _charset, type: _type /}
+    #{/else}
+#{/if}
+
+*{handle inline case}*
+%{
+    def inline
+    if (_inclosure) {
+        def oldOut = _inclosure.getProperty("out")
+        def sw = new java.io.StringWriter()
+        _inclosure.setProperty("out", new java.io.PrintWriter(sw))
+        _inclosure.call()
+        inline = sw.toString()
+        _inclosure.setProperty("out", oldOut)
+    }
+    
+    if (inline && !_output) {
+        def priority = _priority ? _priority : 0
+        sm.declareInline(inline, priority)
+    }
+}%
+
+#{if inline && _output}
+    #{greenscript.openTag_ type: _type/}
+${inline.raw()}
+    #{greenscript.closeTag_ type: _type/}
+#{/if}
