@@ -1,7 +1,6 @@
 %{
-    def caller = _caller
-    while (caller._caller) caller = caller._caller
-    def sm = (_type == 'css') ? caller.gsCssSession : caller.gsJsSession
+    def renderArgs = play.mvc.Scope.RenderArgs.current()
+    def sm = (_type == 'css') ? renderArgs.gsCssSession : renderArgs.gsJsSession
 
     def nameList
     (_load) && (nameList = _load)

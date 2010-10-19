@@ -10,14 +10,12 @@ import play.Logger;
 import play.Play;
 import play.Play.Mode;
 import play.PlayPlugin;
-import play.data.validation.MinCheck;
 import play.exceptions.UnexpectedException;
 import play.mvc.Scope;
 import play.mvc.Scope.RenderArgs;
 
 import com.greenscriptool.DependenceManager;
 import com.greenscriptool.IDependenceManager;
-import com.greenscriptool.IMinimizer;
 import com.greenscriptool.IRenderSession;
 import com.greenscriptool.Minimizer;
 import com.greenscriptool.RenderSession;
@@ -60,8 +58,6 @@ public class GreenScriptPlugin extends PlayPlugin {
         //depConf_ = new Properties();
         minConf_ = new Properties();
         minConf_.putAll(defProps_);
-        jsM_ = new Minimizer(ResourceType.JS);
-        cssM_ = new Minimizer(ResourceType.CSS);
     }
     
     @Override
@@ -71,6 +67,11 @@ public class GreenScriptPlugin extends PlayPlugin {
         InitializeMinimizers();
         
         Logger.info("GreenScript module initialized");
+    }
+    
+    @Override
+    public void onApplicationStop() {
+        cleanUp_();
     }
 
     @Override
@@ -104,8 +105,8 @@ public class GreenScriptPlugin extends PlayPlugin {
     public void InitializeMinimizers() {
         Properties p = Play.configuration;
         
-        initializeMinimizer_(jsM_, p);
-        initializeMinimizer_(cssM_, p);
+        jsM_ = initializeMinimizer_(p, ResourceType.JS);
+        cssM_ = initializeMinimizer_(p, ResourceType.CSS);
         
         for (String key: p.stringPropertyNames()) {
             if (key.startsWith("greenscript.")) {
@@ -149,8 +150,8 @@ public class GreenScriptPlugin extends PlayPlugin {
         return p0;
     }
     
-    private void initializeMinimizer_(Minimizer m, Properties p) {
-        ResourceType type = m.getType();
+    private Minimizer initializeMinimizer_(Properties p, ResourceType type) {
+        Minimizer m = new Minimizer(type);
         String ext = type.getExtension();
         String rootDir = fetchProp_(p, "greenscript.dir.root");
         String resourceDir = fetchProp_(p, "greenscript.dir" + ext);
@@ -174,6 +175,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         m.enableDisableCache(cache);
         
         Logger.trace("minimizer for %1$s loaded", type.name());
+        return m;
     }
     
     private String fetchProp_(Properties p, String key) {
@@ -192,6 +194,11 @@ public class GreenScriptPlugin extends PlayPlugin {
     
     private File getDir_(String dir) {
         return Play.getFile(dir);
+    }
+    
+    private void cleanUp_() {
+        if (null != jsM_) jsM_.clearCache();
+        if (null != cssM_) cssM_.clearCache();
     }
     
     public static GreenScriptPlugin getInstance() {
