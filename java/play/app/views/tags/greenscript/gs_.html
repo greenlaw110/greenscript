@@ -1,6 +1,5 @@
 %{
-    def renderArgs = play.mvc.Scope.RenderArgs.current()
-    def sm = (_type == 'css') ? renderArgs.gsCssSession : renderArgs.gsJsSession
+    def sm = play.modules.greenscript.GreenScriptPlugin.session(_type)
 
     def nameList
     (_load) && (nameList = _load)

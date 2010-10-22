@@ -11,8 +11,6 @@ import play.Play;
 import play.Play.Mode;
 import play.PlayPlugin;
 import play.exceptions.UnexpectedException;
-import play.mvc.Scope;
-import play.mvc.Scope.RenderArgs;
 
 import com.greenscriptool.DependenceManager;
 import com.greenscriptool.IDependenceManager;
@@ -73,12 +71,34 @@ public class GreenScriptPlugin extends PlayPlugin {
     public void onApplicationStop() {
         cleanUp_();
     }
+    
+    private static ThreadLocal<IRenderSession> sessJs_ = new ThreadLocal<IRenderSession>();
+    private static ThreadLocal<IRenderSession> sessCss_ = new ThreadLocal<IRenderSession>();
+    
+    public static IRenderSession session(String type) {
+        ResourceType rt = ResourceType.valueOf(type.toUpperCase());
+        switch (rt) {
+        case JS: return jsSession();
+        case CSS: return cssSession();
+        }
+        throw new UnexpectedException("unknown resource type: " + rt.name());
+    }
+    
+    public static IRenderSession jsSession() {
+        return sessJs_.get();
+    }
+    
+    public static IRenderSession cssSession() {
+        return sessCss_.get();
+    }
 
     @Override
     public void beforeActionInvocation(Method actionMethod) {
-        RenderArgs args = Scope.RenderArgs.current();
-        args.put("gsJsSession", newSession_(ResourceType.JS));
-        args.put("gsCssSession", newSession_(ResourceType.CSS));
+        sessJs_.set(newSession_(ResourceType.JS));
+        sessCss_.set(newSession_(ResourceType.CSS));
+//        RenderArgs args = Scope.RenderArgs.current();
+//        args.put("gsJsSession", newSession_(ResourceType.JS));
+//        args.put("gsCssSession", newSession_(ResourceType.CSS));
     }
     
     public void loadDependencies() {
