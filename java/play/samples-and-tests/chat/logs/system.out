@@ -1,0 +1,9 @@
+20:47:35,325 INFO  ~ Starting /Volumes/Data/Desktop/play/1.0/samples-and-tests/chat
+20:47:35,328 INFO  ~ Module crud is available (/Volumes/Data/Desktop/play/1.0/modules/crud)
+20:47:36,323 INFO  ~ 
+20:47:36,323 INFO  ~ Go to http://localhost:9000/@tests to run the tests
+20:47:36,323 INFO  ~ 
+20:47:36,324 WARN  ~ You're running Play! in DEV mode
+20:47:36,435 INFO  ~ Listening for HTTP on port 9000 (Waiting a first request to start) ...
+20:47:38,336 INFO  ~ Connected to jdbc:hsqldb:mem:playembed
+20:47:39,050 INFO  ~ Application 'Chat' is now started !
