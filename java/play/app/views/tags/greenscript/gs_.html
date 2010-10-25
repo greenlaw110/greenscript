@@ -1,4 +1,7 @@
 %{
+    //def caller = _caller
+    //while (caller._caller) caller = caller._caller
+    //def sm = (_type == 'css') ? caller.gsCssSession : caller.gsJsSession
     def sm = play.modules.greenscript.GreenScriptPlugin.session(_type)
 
     def nameList

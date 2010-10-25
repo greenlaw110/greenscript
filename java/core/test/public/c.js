@@ -1,1 +1,0 @@
-var c = function() {alert('c');}

@@ -3,6 +3,7 @@ package play.modules.greenscript;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.Properties;
 
@@ -11,6 +12,9 @@ import play.Play;
 import play.Play.Mode;
 import play.PlayPlugin;
 import play.exceptions.UnexpectedException;
+import play.mvc.Http.Request;
+import play.mvc.Http.Response;
+import play.vfs.VirtualFile;
 
 import com.greenscriptool.DependenceManager;
 import com.greenscriptool.IDependenceManager;
@@ -18,6 +22,8 @@ import com.greenscriptool.IRenderSession;
 import com.greenscriptool.Minimizer;
 import com.greenscriptool.RenderSession;
 import com.greenscriptool.ResourceType;
+import com.greenscriptool.utils.ICompressor;
+import com.greenscriptool.utils.YUICompressor;
 
 /**
  * Define a Playframework plugin
@@ -96,9 +102,44 @@ public class GreenScriptPlugin extends PlayPlugin {
     public void beforeActionInvocation(Method actionMethod) {
         sessJs_.set(newSession_(ResourceType.JS));
         sessCss_.set(newSession_(ResourceType.CSS));
-//        RenderArgs args = Scope.RenderArgs.current();
-//        args.put("gsJsSession", newSession_(ResourceType.JS));
-//        args.put("gsCssSession", newSession_(ResourceType.CSS));
+    }
+    
+    
+    private static YUICompressor jsC_ = new YUICompressor(ResourceType.JS);
+    private static YUICompressor cssC_ = new YUICompressor(ResourceType.CSS);
+    @Override
+    public boolean serveStatic(VirtualFile file, Request request, Response response) {
+        String fn = file.getName();
+        if (jsM_.isMinimizeEnabled() && fn.endsWith(".js")) {
+            return compressStatic_(file, response, ResourceType.JS);
+        }
+        if (cssM_.isMinimizeEnabled() && fn.endsWith("css")) {
+            return compressStatic_(file, response, ResourceType.CSS);
+        }
+        
+        return super.serveStatic(file, request, response);
+    }
+    
+    private boolean compressStatic_(VirtualFile file, Response resp, ResourceType type) {
+        IRenderSession sess = type == ResourceType.JS ? jsSession() : cssSession();
+        if (null != sess && sess.hasDeclared()) {
+            return false;
+        }
+        if (Play.mode == Mode.PROD) {
+            resp.cacheFor("1h");
+        }
+        ICompressor comp = type == ResourceType.JS ? jsC_ : cssC_;
+        try {
+            StringWriter w = new StringWriter();
+            comp.compress(file.getRealFile(), w);
+            resp.contentType = type == ResourceType.JS ? "text/javascript" : "text/css";
+            resp.status = 200;
+            resp.print(w);
+            return true;
+        } catch (Exception e) {
+            Logger.warn(e, "error compress file %1$s", file.getName());
+            return false;
+        }
     }
     
     public void loadDependencies() {
@@ -125,9 +166,6 @@ public class GreenScriptPlugin extends PlayPlugin {
     public void InitializeMinimizers() {
         Properties p = Play.configuration;
         
-        jsM_ = initializeMinimizer_(p, ResourceType.JS);
-        cssM_ = initializeMinimizer_(p, ResourceType.CSS);
-        
         for (String key: p.stringPropertyNames()) {
             if (key.startsWith("greenscript.")) {
                 String v = p.getProperty(key);
@@ -135,6 +173,9 @@ public class GreenScriptPlugin extends PlayPlugin {
                 Logger.trace("[greenscript]set %1$s to %2$s", v, key);
             }
         }
+
+        jsM_ = initializeMinimizer_(minConf_, ResourceType.JS);
+        cssM_ = initializeMinimizer_(minConf_, ResourceType.CSS);
     }
     
     private IRenderSession newSession_(ResourceType type) {
@@ -186,9 +227,9 @@ public class GreenScriptPlugin extends PlayPlugin {
         m.setResourceUrlPath(resourceUrl);
         m.setRootDir(getDir_(rootDir));
         
-        boolean minimize = getBooleanProp_(p, "greenscript.minimize");
-        boolean compress = getBooleanProp_(p, "greenscript.compress");
-        boolean cache = getBooleanProp_(p, "greenscript.cache");
+        boolean minimize = getBooleanProp_(p, "greenscript.minimize", Play.mode == Mode.PROD);
+        boolean compress = getBooleanProp_(p, "greenscript.compress", true);
+        boolean cache = getBooleanProp_(p, "greenscript.cache", true);
         
         m.enableDisableMinimize(minimize);
         m.enableDisableCompress(compress);
@@ -204,11 +245,17 @@ public class GreenScriptPlugin extends PlayPlugin {
         return val;
     }
     
-    private boolean getBooleanProp_(Properties p, String key) {
+    private boolean getBooleanProp_(Properties p, String key, boolean def) {
         try {
-            return Boolean.parseBoolean(p.getProperty(key));
+            String s = p.containsKey(key) ? p.getProperty(key) 
+                    : defProps_.containsKey(key) ? defProps_.getProperty(key)
+                            : String.valueOf(def);
+
+            p.setProperty(key, s);
+            return Boolean.parseBoolean(s);
         } catch (Exception e) {
-            return false;
+            p.setProperty(key, String.valueOf(def));
+            return def;
         }
     }
     

@@ -3,6 +3,14 @@ h1. GreenScript module
 The GreenScript module help you to manage javascript and CSS dependencies and do minimizing work in the same time.
 <script type="text/javascript" src="http://www.ohloh.net/p/485839/widgets/project_users_logo.js"></script>
 
+h2. <a>What's New for v1.2b</a>
+
+* Support transparent compression. You don't even invoke #{greenscript.css|js /} tag to get your css and js file compressed
+
+h2. <a>What's New for v1.2a</a>
+
+* Fix bug: IllegalStateException thrown out when app restart (in DEV mode)
+
 h2. <a>What's New for v1.2</a>
 
 * Completely rewrite. 
@@ -53,6 +61,12 @@ h2. <a>Three steps to use GreenScript</a>
 ** Check the demo's greenscript.conf file and you will know what it is
 # Use greenscript tag in your template files: #{greenscript.js "myjs1 myjs2 ..." [options] /}
 ** Yes, this part is a little bit complicated, but not that much. I am sure it won't be difficult as #{list} tag
+
+Step 2 and 3 are optional. The simplest form of using GreenScript is to add the following line into your application.conf file:
+
+<samp>module.greenscript=${play.path}/modules/greenscript-xx</samp>
+
+Immediately you have done that, your javascript file and css file will be compressed automatically.
 
 h2. <a>Manual</a>
 
@@ -174,11 +188,11 @@ bc. #{greenscript.css "main", output:'all'/}
 p. Yes! that's it. I know you might have some questions, don't worry. Let me unveil the curtain.
 
 * Where is my "jquery-1.4.2.min.js" ?
-** When you put <samp>loadAll: true</samp> in <samp>#{greenscript.js}</samp> tag, it will output all unloaded js dependency files as well as the default js file you've defined in <samp>greenscript.conf</samp>. I am sure <samp>jquery-1.4.2.min.js</samp> will be reached by either of the 2 lookup paths, otherwise, I assume you will not need that file. For perfectionist, here is how to load the file anyway: <samp>#{greenscript.js "jquery-1.4.2.min.js", output: true/}</samp>
+** When you put <samp>output: 'all'</samp> in <samp>#{greenscript.js}</samp> tag, it will output all unloaded js dependency files as well as the default js file you've defined in <samp>greenscript.conf</samp>. I am sure <samp>jquery-1.4.2.min.js</samp> will be reached by either of the 2 lookup paths, otherwise, I assume you will not need that file. For perfectionist, here is how to load the file anyway: <samp>#{greenscript.js "jquery-1.4.2.min.js", output: true/}</samp>
 * How can I get "moreStyles" and "moreScripts"?
-** You get them automatically when you have <samp>output: true</samp> for <samp>#{greenscript.css}</samp> or <samp>loadAll: true</samp> for <samp>#{greenscript.js}</samp>. The assumption is you have told GreenScript that you need them in other places. I will let you know how to do that later at next section.
+** You get them automatically when you have <samp>output: true</samp> for <samp>#{greenscript.css}</samp> or <samp>output: 'all'</samp> for <samp>#{greenscript.js}</samp>. The assumption is you have told GreenScript that you need them in other places. I will let you know how to do that later at next section.
 * Why do you use <samp>output</samp> for css while <samp>loadAll</samp> for js? 
-** Please don't ask this question now, there are subtile reasons which I would like to discuss with you once you are an expert level GreenScript user.
+** loadAll is deprecated now. Both css and js use 'output: "all"' to output all inline declared and dependencies that has not output yet
 
 h4. <a>Other templates</a>
 
@@ -288,7 +302,7 @@ p. Now guess what happened? You are right, it copied the tags from module folder
 
 bc. play greenscript:cp -a .
 ...
-#{js loadAll:true /}
+#{js output: 'all'/}
 #{js "js1 js2 ..." /}
 ..
 #{css "css1 css2" /}
@@ -300,13 +314,17 @@ h3. <a>Zero configuration</a>
 GreenScript plugin now support zero configuration. It means besides enabling it in your application.conf, you don't need to do any configuration to use it, you don't even need to create "greenscript.conf" file in your conf dir. But what do you get if you don't do any configuration? Well basically you can still benefit from GreenScript with zero configuration:
 * The tags. You are free to utilize all the knowledges you've learned from <a href="#using-tags">Using Tags</a> section. 
 * Minimize/compress. You can also benefit from minimizing/compressing/cache capability of GreenScript.
-* Dynamic configuration. You can also use the dynamic configuration controller. 
+* Dynamic configuration. You can also use the dynamic configuration controller.
 
 So what do you lost without any configuration?
 * Dependency management. Without dependencies infomation defined in <samp>greenscript.conf</samp> file, you are on your own to take care of js/css file dependencies. When you are declare a javascript or css file in a template, you should also make sure all its dependencies are explicitly declared before that scripts "IN PLACE"! If you failed to do that, you might get a lot of script/css errors in your final rendered html page.
 * Dir/URL path bound to play's default. With zero configration, you need to make sure your dir structure (the public) and route mapping of public dir strictly follow Play's convention. Otherwise GreenScript won't be able to locate the javascript/css files. 
 
 As an example to demonstrate zero configuration, I put the ${play.path}/samples-and-tests/booking sample in the samples-and-tests dir of greenscript, makes the minimum changes to the templates and application.conf files.
+
+h3. <a>Transparent Compression</a>
+
+GreenScript support Transparent Compression start from v1.2b. With Transparent Compression, even you don't use greenscript tag, your js file and css file will automatically get compressed even without your attention (in PROD mode).
 
 In conclusion, GreenScript is a flexible and powerful javascript/css management tool for your Play applicaiton development. You can use it in simple way (zero configuration) or in a way sophsicated enough to manage your complicated javascript and css dependencies.
 
