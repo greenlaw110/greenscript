@@ -26,7 +26,8 @@ import java.util.Set;
  * final resource list for output
  * 
  * @author greenlaw110@gmail.com
- * @version 1.0 2010-10-14
+ * @version 1.0.1 2010-11-13 add compatibility for play-greenscript v1.1 or before
+ * @version 1.0 2010-10-14 original version
  * @since 1.0
  */
 public interface IRenderSession {
@@ -51,6 +52,7 @@ public interface IRenderSession {
      * @param browser browser to which css resource apply to 
      */
     void declare(String nameList, String media, String browser);
+    void declare(List<String> nameList, String media, String browser);
     
     /**
      * <p>Notify render session of an inline resource (javascript/css) and it's

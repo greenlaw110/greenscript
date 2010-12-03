@@ -176,6 +176,10 @@ public class GreenScriptPlugin extends PlayPlugin {
 
         jsM_ = initializeMinimizer_(minConf_, ResourceType.JS);
         cssM_ = initializeMinimizer_(minConf_, ResourceType.CSS);
+        
+        if (p.containsKey("greenscript.useGoogleClosure")) {
+        	System.setProperty("greenscript.useGoogleClosure", p.getProperty("greenscript.useGoogleClosure"));
+        }
     }
     
     private IRenderSession newSession_(ResourceType type) {

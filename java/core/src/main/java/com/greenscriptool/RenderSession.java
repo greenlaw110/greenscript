@@ -17,7 +17,8 @@ import org.apache.commons.logging.LogFactory;
  * The implementation of {@link IRenderSession} interface
  * 
  * @author greenlaw110@gmail.com
- * @version 1.0, 2010-10-15
+ * @version 1.0.1, 2010-11-13 add compatibility to play-greenscript v1.1 or before
+ * @version 1.0, 2010-10-15 original version
  * @since 1.0
  */
 public class RenderSession implements IRenderSession {
@@ -81,6 +82,15 @@ public class RenderSession implements IRenderSession {
         media = canonical_(media);
         browser = canonical_(browser);
         for (String name: sa) {
+            declared_.add(new Resource(name, media, browser));
+        }
+    }
+
+    @Override
+    public void declare(List<String> nameList, String media, String browser) {
+        media = canonical_(media);
+        browser = canonical_(browser);
+        for (String name: nameList) {
             declared_.add(new Resource(name, media, browser));
         }
     }

@@ -5,6 +5,7 @@
     def sm = play.modules.greenscript.GreenScriptPlugin.session(_type)
 
     def nameList
+    (_require) && (nameList = _require)
     (_load) && (nameList = _load)
     (_import) && (nameList = _import)
     (_declare) && (nameList = _declare)
