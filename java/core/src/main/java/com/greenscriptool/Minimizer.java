@@ -18,8 +18,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.greenscriptool.utils.FileCache;
-import com.greenscriptool.utils.GreenScriptCompressor;
 import com.greenscriptool.utils.ICompressor;
+import com.greenscriptool.utils.YUICompressor;
 
 public class Minimizer implements IMinimizer {
     
@@ -56,7 +56,8 @@ public class Minimizer implements IMinimizer {
     private ResourceType type_;
     
     public Minimizer(ResourceType type) {
-        this(new GreenScriptCompressor(type), type);
+//        this(new GreenScriptCompressor(type), type);
+        this(new YUICompressor(type), type);
     }
     
     @Inject

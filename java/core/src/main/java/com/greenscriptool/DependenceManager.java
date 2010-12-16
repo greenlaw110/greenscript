@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -152,6 +153,47 @@ public class DependenceManager implements IDependenceManager {
         }
         
         return n;
+    }
+    
+    static class NodeComparator implements Comparator<Node> {
+
+    	private final List<String> nameSequence;
+
+		public NodeComparator(List<String> nameSequence) {
+			this.nameSequence = nameSequence;
+			// Sort for to be prepared by binary search
+			Collections.sort(nameSequence);
+		}
+    	
+		@Override
+		public int compare(Node o1, Node o2) {
+			if (o1 == null && o2 == null) {
+				return 0;
+			}
+			
+			if (o1 != null && o2 == null) {
+				return -1;
+			}
+			
+			if (o1 == null && o2 != null) {
+				return 1;
+			}
+			
+			int result = o2.weight_ - o1.weight_;
+			if (result != 0) {
+				return result;
+			}
+			
+			int seq1 = Collections.binarySearch(nameSequence, o1.name_);
+			int seq2 = Collections.binarySearch(nameSequence, o2.name_);
+			
+			if(seq1 >= 0 && seq2 >= 0) {
+				// Both are found in name sequen, compare the sequence
+				return seq1  - seq2;
+			}
+			
+			return o2.name_.compareTo(o1.name_);
+		}
     }
 
     /**
