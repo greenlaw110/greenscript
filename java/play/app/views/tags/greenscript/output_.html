@@ -3,7 +3,7 @@
 #{/if}
 #{list items: _sm.output(_nameList, _withDeps, _all, _media, _browser), as: 'url'}
     #{if _type=='css'}
-<link rel="stylesheet" type="text/css" media="${_media?:'all'}" href="${url}">
+<link rel="stylesheet" type="text/css" media="${_media?:'all'}" href="${url}"/>
     #{/if}
     #{else}
 <script type="text/javascript" src="${url}" #{if _id}id="${_id}"#{/if} #{if _charset}charset="${_charset}"#{/if}></script>
