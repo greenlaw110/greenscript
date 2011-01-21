@@ -45,6 +45,7 @@
 	        		<li><a href="#tab-settings">Plugin Settings</a></li>
 	        		<li><a href="#tab-paths">Path and URLs</a></li>
 	        		<li><a href="#tab-deps">css/js dependencies</a></li>
+					<li><a href="#tab-debug">dependency debug info</a></li>
 	        	</ul>
 	        	<div id="tab-settings">
 	        		#{form @update(), enctype:'multipart/form-data'}
@@ -161,6 +162,12 @@
         				</form>
         			</p>
 	        	</div>
+				<div id="tab-debug">
+					<p>Javascript dependency debug info</p>
+					<textarea style="width: 800px; height:300px">${jsDebug}</textarea>
+					<p>Stylesheet dependency debug info</p>
+					<textarea style="width: 800px; height:300px">${cssDebug}</textarea>
+				</div>
 	        </div>
 		    <div style="text-align:center;padding-top:10px"><b>GreenScript Configurator v1.2</b> by <a href="mail:greenlaw110@gmail.com">greenlaw110@gmail.com</a></div>
 	    </div>

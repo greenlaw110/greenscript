@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import play.Play;
 import play.modules.greenscript.GreenScriptPlugin;
 import play.mvc.Controller;
 
@@ -31,7 +30,11 @@ public class Configurator extends Controller {
         
         // minimizer config
         Properties minConf = gs.getMinimizerConfig();
-        render(cssDeps, jsDeps, minConf);
+        
+        String jsDebug = gs.jsDebugString();
+        String cssDebug = gs.cssDebugString();
+        
+        render(cssDeps, jsDeps, minConf, jsDebug, cssDebug);
     }
 
     public static void update(boolean minimize, boolean compress, boolean cache) {

@@ -5,7 +5,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 import play.Logger;
 import play.Play;
@@ -29,6 +33,9 @@ import com.greenscriptool.utils.YUICompressor;
  * Define a Playframework plugin
  * 
  * @author greenlaw110@gmail.com
+ * @version 1.2.1, 2011-01-20 
+ *           1. support reverse dependency declaration, e.g:
+ *           * js.jquery-1.4.4-=jquery-ui.1.8.7,jquery.tmpl
  * @version 1.2, 2010-10-16
  */
 public class GreenScriptPlugin extends PlayPlugin {
@@ -70,12 +77,20 @@ public class GreenScriptPlugin extends PlayPlugin {
         loadDependencies();
         InitializeMinimizers();
         
-        Logger.info("GreenScript module initialized");
+        Logger.info("GreenScript-v1.2c initialized");
     }
-    
+	
     @Override
     public void onApplicationStop() {
         cleanUp_();
+    }
+    
+    public String jsDebugString() {
+        return ((DependenceManager)jsD_).debugString();
+    }
+    
+    public String cssDebugString() {
+        return ((DependenceManager)cssD_).debugString();
     }
     
     private static ThreadLocal<IRenderSession> sessJs_ = new ThreadLocal<IRenderSession>();
@@ -199,8 +214,33 @@ public class GreenScriptPlugin extends PlayPlugin {
         p.putAll(minConf_);
         return p;
     }
+	
+	private String join_(Collection<String> c) {
+		boolean first = true;
+		StringBuffer sb = new StringBuffer();
+		for (String s: c) {
+			if (!first) sb.append(",");
+			else first = false;
+			sb.append(s);
+		}
+		return sb.toString();
+	}
+	
+	private void mergeProperties_(Properties p, String k, String v){
+      String oldV = p.getProperty(k);
+      if (null == oldV) {
+          p.setProperty(k, v);
+      } else {
+          Set<String> oldS = new HashSet<String>();
+          oldS.addAll(Arrays.asList(oldV.split(IDependenceManager.SEPARATOR)));
+          Set<String> newS = new HashSet<String>();
+          newS.addAll(Arrays.asList(v.split(IDependenceManager.SEPARATOR)));
+          oldS.addAll(newS);
+          p.setProperty(k, join_(oldS));
+      }
+	}
     
-    // prefix should be "js" or "css"
+    // type should be "js" or "css"
     private Properties loadDepProp_(Properties p, String type) {
         Properties p0 = new Properties();
         String prefix = type + ".";
@@ -208,7 +248,15 @@ public class GreenScriptPlugin extends PlayPlugin {
             if (k.startsWith(prefix)) {
                 String k0 = k.replace(prefix, "");
                 String v = p.getProperty(k);
-                p0.setProperty(k0, p.getProperty(k));
+                if (k0.matches(".*\\s*\\-\\s*$")) {
+                    // reverse dependency declaration
+                    k0 = k0.replaceAll("\\s*\\-\\s*$", "");
+                    for (String s: v.replaceAll("\\s+", "").split(IDependenceManager.SEPARATOR)) {
+                        mergeProperties_(p0, s, k0);
+                    }
+                } else {
+                    mergeProperties_(p0, k0, v);
+                }
                 Logger.trace("Found one %1$s dependency: %2$s depends on '%3$s'", type, k0, v);
             }
         }

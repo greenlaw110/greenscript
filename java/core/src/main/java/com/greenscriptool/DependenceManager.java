@@ -20,12 +20,23 @@ import java.util.TreeSet;
  * instance. The input is defined in a {@link Properties}. 
  * 
  * @author greenlaw110@gmail.com
+ * @version 1.0.1, 2010-01-21, add debugString()
  * @version 1.0, 2010-10-14
  * @since 1.0
  */
 public class DependenceManager implements IDependenceManager {
     
     private Map<String, Node> dependencies_ = new HashMap<String, Node>();
+    public String debugString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("===============================================================")
+          .append("\n DependencyManager debug information ");
+        for (Node n: dependencies_.values()) {
+            sb.append(String.format("\n\n node info: %1$s\n", n.name_))
+              .append(n.debugString());
+        }
+        return sb.toString();
+    }
     
     /**
      * Create a dependency manager with a properties which
@@ -179,12 +190,12 @@ public class DependenceManager implements IDependenceManager {
          * The weight of the node shall always be smaller than the 
          * weight of any one of it's depend on nodes  
          */
-        private int weight_ = 1;
+        private long weight_ = 1;
         
         /**
          * the smallest gap between weight of nodes
          */
-        private static final int STEP_ = 100;
+        private static final int STEP_ = 10;
         
         /**
          * keep track whether the dependencies of this node has 
@@ -221,6 +232,18 @@ public class DependenceManager implements IDependenceManager {
         public String toString() {
             return name_;
         }
+        
+        public String debugString() {
+            String openTag = String.format("<node name='%1$s' weight='%2$s'>", name_, weight_);
+            String closeTag = "\n</node>";
+            StringBuffer sb = new StringBuffer();
+            sb.append(openTag);
+            for (Node n: dependOns_.values()) {
+                sb.append("\n\t" + n.debugString());
+            }
+            sb.append(closeTag);
+            return sb.toString();
+        }
 
         @Override
         public int compareTo(Node o) {
@@ -228,8 +251,10 @@ public class DependenceManager implements IDependenceManager {
             if (equals(o)) return 0;
             if (this.weight_ == o.weight_)
                 return o.name_.compareTo(this.name_);
-            else
-                return (o.weight_ - this.weight_);
+            else {
+                long l = o.weight_ - this.weight_;
+                return (l > 0) ? 1 : ((l < 0) ? -1 : 0);
+            }
         }
 
         /**
