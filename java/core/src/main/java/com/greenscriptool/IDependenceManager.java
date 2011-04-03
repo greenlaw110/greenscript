@@ -16,12 +16,34 @@ import java.util.List;
  * @since 1.0
  */
 public interface IDependenceManager {
+	
+    /**
+     *  <p>Used to mark a resource being a bundle resource. A bundle resource
+     *  is not a real resource, instead it represents a groups of resources
+     *  by means of {@link IDependenceManager dependency management}.</p>
+     *  
+     *  <p>A resource marked with this surffix will be checked to see if it
+     *  exists, if not, then no processing will be taken on the resource</p> 
+     */
+	static final String BUNDLE_SUFFIX = ".bundle";
     
     /**
      * <code>SEPARATOR</code> defines separator characters to split a
      * resource name list in {@link java.lang.String}
      */
-    static final String SEPARATOR = "[ ,;]";
+    static final String SEPARATOR = "[ ,;<>]";
+    
+    /**
+     * <code>SEP_DEPEND_ON</code> defines an inline relationship between two elements in a string.
+     * e.g. "a < b" means element "b" is a dependency of element "a" 
+     */
+    static final String SEP_DEPEND_ON = "<";
+    
+    /**
+     * <code>SEP_REVERSE_DEPEND_ON</code> defines an inline relationship between two elements in a string
+     * e.g. "a > b" means element "a" is a dependency of element "b"
+     */
+    static final String SEP_REVERSE_DEPEND_ON = ">";
     
     /**
      * <code>DEFAULT</code> denotes a pseudo resource called "default". all resources
@@ -42,7 +64,7 @@ public interface IDependenceManager {
     List<String> comprehend(Collection<String> resourceNames);
     
     /**
-     * Comprehend a resource name list. This process includes:
+     * <p>Comprehend a resource name list. This process includes:
      * <ol>
      * <li>Add missing dependent resource names into the list</li>
      * <li>Sort the list following the dependency graph built up in
@@ -52,11 +74,11 @@ public interface IDependenceManager {
      * <li>Duplicated items be removed from the list
      * </ol>
      * 
-     * if <code>withDefault</code> option set to true, then all dependOns
+     * <p>if <code>withDefault</code> option set to true, then all dependOns
      * of {@link #DEFAULT} resource and their dependOns in turn will be added 
      * to the comprehended list before any other resources
      * 
-     * if there are any resources in the list which are not managed by
+     * <p>if there are any resources in the list which are not managed by
      * this {@link IDependenceManager}, ie. there is no dependence 
      * relationship associated with the resources, then these names
      * will be put at the end of the returned list, following their
@@ -103,18 +125,18 @@ public interface IDependenceManager {
     List<String> comprehend();
     
     /**
-     * Add a dependence relationship. A dependence relationship is
+     * <p>Add a dependence relationship. A dependence relationship is
      * presented by a <code>dependent</code> resource and a set of 
      * other resources the <code>dependent</code> depends on.
      * 
-     * A <code>dependent</code> resource might not necessarily be a
+     * <p>A <code>dependent</code> resource might not necessarily be a
      * real resource. It could be a pseudo resource called bundle
      * which means once it's referenced, then all it's depends on
      * resources will be placed inline. The resources in the depends
      * on list might be pseudo itself given that it's depends on 
      * will finally interpreted to real resources.
      * 
-     * Note <code>IDependencyManager</code> itself does not distinguish
+     * <p>Note <code>IDependencyManager</code> itself does not distinguish
      * real resources from pseudo resources (bundles). It's up to
      * the user program to decide how to manipulate the resources (by
      * name)
@@ -126,4 +148,15 @@ public interface IDependenceManager {
      * @throws NullPointerException if either dependent or dependsOn is null
      */
     void addDependency(String dependent, Collection<String> dependsOn);
+    
+    /**
+     * <p>Process inline dependency relationship.
+     * 
+     * <p>This method is called when {@link #comprehend(String, boolean)} is called. The passing string
+     * could be something like 'a < b > c > d e', where 'a' depends on 'b', 'd' depends on 'c' which 
+     * depends on 'b', the relationship of 'e' has not been defined in the string
+     * 
+     * @param dependency
+     */
+    void processInlineDependency(String dependency);
 }

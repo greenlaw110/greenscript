@@ -23,16 +23,6 @@ import com.greenscriptool.utils.ICompressor;
 
 public class Minimizer implements IMinimizer {
     
-    /**
-     *  <p>Used to mark a resource being a bundle resource. A bundle resource
-     *  is not a real resource, instead it represents a groups of resources
-     *  by means of {@link IDependenceManager dependency management}.</p>
-     *  
-     *  <p>A resource marked with this surffix will be checked to see if it
-     *  exists, if not, then no processing will be taken on the resource</p> 
-     */
-    public static final String BUNDLE_SUFFIX = "_bundle";
-    
     private static Log logger_ = LogFactory.getLog(Minimizer.class);
     
     private boolean minimize_;
@@ -46,8 +36,8 @@ public class Minimizer implements IMinimizer {
     private boolean verifyResource_;
     
     private FileCache cache_;
-    private File resourceDir_;
-    private File rootDir_;
+    private String resourceDir_;
+    private String rootDir_;
     
     private String resourceUrlPath_;
     private String cacheUrlPath_;
@@ -105,15 +95,15 @@ public class Minimizer implements IMinimizer {
     }
     
     @Override
-    public void setResourceDir(File dir) {
-        if (!dir.isDirectory()) throw new IllegalArgumentException("not a directory");
+    public void setResourceDir(String dir) {
+        //if (!dir.isDirectory()) throw new IllegalArgumentException("not a directory");
         checkInitialize_(false);
         resourceDir_ = dir;
     }
     
     @Override
-    public void setRootDir(File dir) {
-        if (!dir.isDirectory()) throw new IllegalArgumentException("not a directory");
+    public void setRootDir(String dir) {
+        //if (!dir.isDirectory()) throw new IllegalArgumentException("not a directory");
         checkInitialize_(false);
         rootDir_ = dir;
         if (logger_.isDebugEnabled()) logger_.debug(String.format("root dir set to %1$s", dir));
@@ -149,6 +139,17 @@ public class Minimizer implements IMinimizer {
         cache_.clear();
     }
     
+    private IFileLocator fl_ = new IFileLocator(){
+    	public File locate(String path) {
+    		return new File(path);
+    	}
+    }; 
+    @Override
+    public void setFileLocator(IFileLocator fileLocator) {
+    	if (null == fileLocator) throw new NullPointerException();
+    	fl_ = fileLocator;
+    }
+    
     /**
      * A convention used by this minimizer is resource name suffix with "_bundle". For
      * any resource with the name suffix with "_bundle"
@@ -166,9 +167,9 @@ public class Minimizer implements IMinimizer {
                 if (fn.startsWith("http")) l.add(fn); // CDN resource
                 else {
                     String s = fn.replace(type_.getExtension(), "");
-                    if (verifyResource_ || s.equalsIgnoreCase("default") || s.endsWith(BUNDLE_SUFFIX)) {
+                    if (verifyResource_ || s.equalsIgnoreCase("default") || s.endsWith(IDependenceManager.BUNDLE_SUFFIX)) {
                         File f = getFile_(fn);
-                        if (!f.isFile()) continue;
+                        if (null == f || !f.isFile()) continue;
                     }
                     String ext = type_.getExtension();
                     fn = fn.endsWith(ext) ? fn : fn + ext; 
@@ -209,7 +210,7 @@ public class Minimizer implements IMinimizer {
                 if (s.startsWith("http:")) l.add(s);
                 else {
                     File f = getFile_(s);
-                    if (f.exists()) merge_(f, out);
+                    if (null != f && f.exists()) merge_(f, out);
                     else ; // possibly a pseudo or error resource name
                 }
             }
@@ -258,8 +259,8 @@ public class Minimizer implements IMinimizer {
     private File getFile_(String resourceName) {
         String fn = resourceName, ext = type_.getExtension();
         fn = fn.endsWith(ext) ? fn : fn + ext;
-        if (fn.startsWith("/")) return new File(rootDir_, fn.substring(1));
-        return new File(resourceDir_, fn);
+        String path = (fn.startsWith("/")) ? rootDir_ + fn : rootDir_ + File.separator + resourceDir_ + File.separator + fn;
+        return fl_.locate(path);
     }
 
     private static void copy_(File file, Writer out) throws IOException {

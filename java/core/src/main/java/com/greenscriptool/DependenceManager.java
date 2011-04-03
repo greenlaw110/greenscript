@@ -12,6 +12,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A tree node based implementation of {@link IDependenceManager}.
@@ -35,6 +37,7 @@ public class DependenceManager implements IDependenceManager {
             sb.append(String.format("\n\n node info: %1$s\n", n.name_))
               .append(n.debugString());
         }
+        
         return sb.toString();
     }
     
@@ -132,6 +135,35 @@ public class DependenceManager implements IDependenceManager {
     @Override
     public void addDependency(String dependent, Collection<String> dependsOn) {
         createNode_(dependent, dependsOn);
+    }
+    
+    @Override
+    public void processInlineDependency(String dependency) {
+    	
+    }
+    
+    public static void main(String[] args) {
+//    	String s = "x-1.0 /x/b/a-1.0.js < b > c > d e f < g";
+//    	String regex = "([\\w\\/\\-\\.]+\\s*[<>]\\s*[\\w\\/\\-\\.]+)";
+//    	Pattern p = Pattern.compile(regex);
+//    	Matcher m = p.matcher(s);
+//    	while (m.find()) System.out.println(m.group());
+
+//    	String s = "x-1.0 /x/b/a-1.0.js < b > c > d e f < g";
+//        String regex = "(?=([\\w\\/\\-\\.]+\\s*[<>]\\s*[\\w\\/\\-\\.]+))";
+//        Pattern p = Pattern.compile(regex);
+//        Matcher m = p.matcher(s);
+//        while(m.find()) {
+//            System.out.println(m.group(1));
+//        }
+    	
+        String s = "abc < x > y";
+        String regex = "(?=(\\w+\\s*[<>]{1}\\s*\\w+)).";
+        Pattern p = Pattern.compile(regex);
+        Matcher m = p.matcher(s);
+        while(m.find()) {
+            System.out.println(m.group(1));
+        }
     }
     
     /**

@@ -109,7 +109,7 @@ public interface IMinimizer extends IProcessor {
      * 
      * @param dir the directory resource is stored
      */
-    void setResourceDir(File dir);
+    void setResourceDir(String dir);
     
     /**
      * Set the directory where minimizer can find resource if
@@ -117,7 +117,7 @@ public interface IMinimizer extends IProcessor {
      * 
      * @param root the root directory of all kind of resource types
      */
-    void setRootDir(File root);
+    void setRootDir(String root);
     
     /**
      * Set the directory where minimizer can store the processed resource files
@@ -192,5 +192,11 @@ public interface IMinimizer extends IProcessor {
      * @throws NullPointerException if fileNames is null
      */
     List<String> process(List<String> resourceNames);
+    
+    /**
+     * Set file locator
+     * @param fileLocator
+     */
+    void setFileLocator(IFileLocator fileLocator);
     
 }

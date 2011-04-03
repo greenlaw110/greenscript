@@ -35,15 +35,15 @@ public class MinimizerTest extends BaseTest {
         
         //echo (new File(rootDir).getAbsolutePath());
         jm = new Minimizer(ResourceType.JS);
-        jm.setRootDir(rootDir);
-        jm.setResourceDir(jsDir);
+        jm.setRootDir(rootDir.getAbsolutePath());
+        jm.setResourceDir("javascripts");
         jm.setCacheDir(cacheDir);
         jm.setResourceUrlPath(jsUrlPath);
         jm.setCacheUrlPath(cacheUrlPath);
         
         cm = new Minimizer(ResourceType.CSS);
-        cm.setRootDir(rootDir);
-        cm.setResourceDir(cssDir);
+        cm.setRootDir(rootDir.getAbsolutePath());
+        cm.setResourceDir("stylesheets");
         cm.setCacheDir(cacheDir);
         cm.setResourceUrlPath(cssUrlPath);
         cm.setCacheUrlPath(cacheUrlPath);
@@ -79,7 +79,7 @@ public class MinimizerTest extends BaseTest {
         v_("/css/b.css,/f1/c.css,/css/a.css", "b,/f1/c.css,a", cm);
         
         // _bundle convention
-        v_("/js/a.js", "a,abc_bundle", jm);
+        v_("/js/a.js", "a,abc.bundle", jm);
         
         // bad resource when verifyResource is disabled
         v_("/js/a.js,/js/faked.js,/c.js", "a,faked,/c", jm);

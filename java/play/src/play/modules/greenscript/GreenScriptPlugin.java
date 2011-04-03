@@ -2,7 +2,6 @@ package play.modules.greenscript;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -22,6 +21,7 @@ import play.vfs.VirtualFile;
 
 import com.greenscriptool.DependenceManager;
 import com.greenscriptool.IDependenceManager;
+import com.greenscriptool.IFileLocator;
 import com.greenscriptool.IRenderSession;
 import com.greenscriptool.Minimizer;
 import com.greenscriptool.RenderSession;
@@ -52,8 +52,8 @@ public class GreenScriptPlugin extends PlayPlugin {
         defProps_ = new Properties();
         // file paths
         defProps_.put("greenscript.dir.root", "/public");
-        defProps_.put("greenscript.dir.js", "/public/javascripts");
-        defProps_.put("greenscript.dir.css", "/public/stylesheets");
+        defProps_.put("greenscript.dir.js", "javascripts");
+        defProps_.put("greenscript.dir.css", "stylesheets");
         defProps_.put("greenscript.dir.minimized", "/public/gs");
         // url paths
         defProps_.put("greenscript.url.js", "/public/javascripts");
@@ -159,21 +159,19 @@ public class GreenScriptPlugin extends PlayPlugin {
     
     public void loadDependencies() {
         Properties p = new Properties();
-        File f = Play.getFile("conf/greenscript.conf");
-        Logger.trace("loading dependency configuration from %1$s", f.getAbsolutePath());
-        if (f.isFile()) {
-            try {
-                p.load(new BufferedInputStream(new FileInputStream(f)));
-            } catch (Exception e) {
-                throw new UnexpectedException("error loading conf/greenscript.conf");
-            }
-            
-            jsD_ = new DependenceManager(loadDepProp_(p, "js"));
-            cssD_ = new DependenceManager(loadDepProp_(p, "css"));
-        } else {
-            jsD_ = new DependenceManager(p);
-            cssD_ = new DependenceManager(p);
+        for (VirtualFile vf: Play.roots) {
+        	VirtualFile conf = vf.child("conf/greenscript.conf");
+        	if (conf.exists()) {
+                Logger.trace("loading dependency configuration from %1$s", conf.getRealFile().getAbsolutePath());
+        		try {
+        			p.load(new BufferedInputStream(conf.inputstream()));
+        		} catch (Exception e) {
+        			throw new UnexpectedException("error loading conf/greenscript.conf");
+        		}
+        	}
         }
+        jsD_ = new DependenceManager(loadDepProp_(p, "js"));
+        cssD_ = new DependenceManager(loadDepProp_(p, "css"));
         
         depConf_ = p;
     }
@@ -273,11 +271,11 @@ public class GreenScriptPlugin extends PlayPlugin {
         String resourceUrl = fetchProp_(p, "greenscript.url" + ext);
         String cacheUrl = fetchProp_(p, "greenscript.url.minimized");
         
-        m.setCacheDir(getDir_(cacheDir));
+        m.setCacheDir(Play.getFile(cacheDir));
         m.setCacheUrlPath(cacheUrl);
-        m.setResourceDir(getDir_(resourceDir));
+        m.setResourceDir(resourceDir);
         m.setResourceUrlPath(resourceUrl);
-        m.setRootDir(getDir_(rootDir));
+        m.setRootDir(rootDir);
         
         boolean minimize = getBooleanProp_(p, "greenscript.minimize", Play.mode == Mode.PROD);
         boolean compress = getBooleanProp_(p, "greenscript.compress", true);
@@ -286,6 +284,12 @@ public class GreenScriptPlugin extends PlayPlugin {
         m.enableDisableMinimize(minimize);
         m.enableDisableCompress(compress);
         m.enableDisableCache(cache);
+        m.setFileLocator(new IFileLocator(){
+        	public File locate(String path) {
+        		VirtualFile vf = VirtualFile.search(Play.roots, path);
+        		return vf == null ? null : vf.getRealFile();
+        	}
+        });
         
         Logger.trace("minimizer for %1$s loaded", type.name());
         return m;
@@ -311,9 +315,9 @@ public class GreenScriptPlugin extends PlayPlugin {
         }
     }
     
-    private File getDir_(String dir) {
-        return Play.getFile(dir);
-    }
+//    private File getDir_(String dir) {
+//        return Play.getFile(dir);
+//    }
     
     private void cleanUp_() {
         if (null != jsM_) jsM_.clearCache();
