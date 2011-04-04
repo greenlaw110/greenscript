@@ -274,16 +274,16 @@ p. There is a long time complaint that greenscript does not guarantee the output
 
 p. Now (start from v1.2d) greenscript support inline dependency declaration in tags, which basically remove the inconvenience that simple resource file dependencies are also require developer to provide a greenscript.conf file:
 
-bc. #{greenscript.js 'myapp &lt; mylib &lt; jquery-1.5.min'/}
+bc. #{greenscript.js 'myapp < mylib < jquery-1.5.min'/}
 
 p. The above javascript declaration also setup the dependencies among the declared javascript resources: myapp.js relies on mylib.js which in turn relies on jquery-1.5.min. Therefore you no longer need a greenscript.conf file to define the dependencies among myapp, mylib and jquery-1.5.min javascript files.
 
-p. The limitation of inline dependency declaration is you can't use it across multiple template files. Say you have a javascript A declared in main.html and then you have another javascript B declared in index.html, you can't use inline dependency declaration to declare the dependency relationship between A and B unless you declare them all in index.html: #{greenscript 'A &gt; B'/}
+p. The limitation of inline dependency declaration is you can't use it across multiple template files. Say you have a javascript A declared in main.html and then you have another javascript B declared in index.html, you can't use inline dependency declaration to declare the dependency relationship between A and B unless you declare them all in index.html: #{greenscript 'A > B'/}
 
 p. Reference
 
-bc. A &gt; B means B relies on A
-A &lt; A means A relies on B
+bc. A > B means B relies on A
+A < B means A relies on B
 
 h4. <a>Media and Browser</a>
 
