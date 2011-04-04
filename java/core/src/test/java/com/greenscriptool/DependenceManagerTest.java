@@ -103,4 +103,11 @@ public class DependenceManagerTest extends BaseTest {
     public void testCircularDependencies() throws Exception {
        l_("circular.properties");
     }
+    
+    @Test
+    public void testInlineDependencyDeclaration() throws Exception {
+    	dm = new DependenceManager(new Properties());
+    	v_("a,c,b", "b < c < a");
+    	v_("x,z,y", "x > z > y");
+    }
 }

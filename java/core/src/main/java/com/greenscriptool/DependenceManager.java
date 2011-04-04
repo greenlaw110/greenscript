@@ -123,6 +123,7 @@ public class DependenceManager implements IDependenceManager {
     @Override
     public List<String> comprehend(String resourceNames, boolean withDefault) {
         if (null == resourceNames) return comprehend(new ArrayList<String>(), withDefault);
+        processInlineDependency(resourceNames);
         List<String> l = Arrays.asList(resourceNames.split(SEPARATOR));
         return comprehend(l, withDefault);
     }
@@ -137,9 +138,27 @@ public class DependenceManager implements IDependenceManager {
         createNode_(dependent, dependsOn);
     }
     
-    @Override
     public void processInlineDependency(String dependency) {
-    	
+    	dependency = " " + dependency; // in order to match the regexp
+    	final Pattern p = Pattern.compile("(?=[\\s,;]+([\\w\\/\\-\\.]+\\s*[<>]\\s*[\\w\\/\\-\\.]+)[\\s,;$]*).");
+    	Matcher m = p.matcher(dependency); boolean found = false;
+    	while (m.find()) {
+    		found = true;
+    		String g = m.group(1);
+    		String[] relation = g.split("[<>]");
+    		String a = relation[0].trim();
+    		String b = relation[1].trim();
+    		if (g.indexOf('<') > -1) {
+    			addDependency(a, Arrays.asList(new String[]{b}));
+    		} else {
+    			addDependency(b, Arrays.asList(new String[]{a}));
+    		}
+    	}
+    	if (found) {
+            for (Node n: dependencies_.values()) {
+                n.rectify();
+            }
+    	}
     }
     
     public static void main(String[] args) {
@@ -157,8 +176,8 @@ public class DependenceManager implements IDependenceManager {
 //            System.out.println(m.group(1));
 //        }
     	
-        String s = "abc < x > y";
-        String regex = "(?=(\\w+\\s*[<>]{1}\\s*\\w+)).";
+        String s = " something.js > /some/path/to/x19-v1.0.js < y < z < a > b > c > d";
+        String regex = "(?=[\\s,;]+([\\w\\/\\-\\.]+\\s*[<>]\\s*[\\w\\/\\-\\.]+)[\\s,;$]*).";
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(s);
         while(m.find()) {

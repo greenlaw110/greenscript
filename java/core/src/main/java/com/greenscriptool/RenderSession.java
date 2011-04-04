@@ -78,6 +78,7 @@ public class RenderSession implements IRenderSession {
 
     @Override
     public void declare(String nameList, String media, String browser) {
+    	d_.processInlineDependency(nameList);
         String[] sa = nameList.split(SEPARATOR);
         media = canonical_(media);
         browser = canonical_(browser);

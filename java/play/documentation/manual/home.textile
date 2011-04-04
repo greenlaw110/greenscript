@@ -16,6 +16,7 @@ h2. <a>What's New for v1.2d</a>
 ** E.g. js.jq.bundle=http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js,http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.10/jquery-ui.js
 ** You can use '.bundle' to define an alias for a resource, or
 ** you can use '.bundle' to define a group of resources that always been used together
+* Support inline dependency declaration (search for 'inline dependency declaration' in this document)
 
 h2. <a>What's New for v1.2c</a>
 
@@ -159,7 +160,7 @@ greenscript.cache=false
 
 h2. <a>Configure javascript/css dependencies</a>
 
-p. Javascript/css dependencies are documented in a separate configuration file named <samp>greenscript.conf</samp>, which should be put into the conf dir (the same place with your application.conf)
+p. Javascript/css dependencies are documented in a separate configuration file named <samp>greenscript.conf</samp>, which should be put into the conf dir (the same place with your application.conf). Start from v1.2d, greenscript.conf could be put under conf dir of modules, and these module level greenscript configuration will be merged with application greenscript.conf to define the whole depenedency graph of javascript and css files located in your application and module folders. One limitation to this module level greenscript.conf support is that your javascript and css file must be put in the same directory hierarchy. For example, if you app js/css files are put into ${app.root}/public/javascripts and ${app.root}/public/stylesheets, then all your module you want to use with greenscript must also store their javascripts and css files inside ${module.root}/public/javascripts and ${module.root}/public/stylesheets.
 
 p. It's fairly straght forward to document the file dependencies. Let's say your have four javascript files a.js, b.js, c.js and d.js, the dependency relationship is b.js depends on a.js, c.js depends on both b.js and d.js, then here is the content of your <samp>greenscript.conf</samp> file:
 
@@ -264,6 +265,25 @@ bc. #{greenscript.js output:true}
         new Control.DatePicker(el, {icon: '/public/images/calendar.png', locale: 'en_iso8601'});
     });
 #{/greenscript.js}
+
+h4. <a>Inline Dependency Declaration</a>
+
+p. There is a long time complaint that greenscript does not guarantee the output sequence of resource (js/css) files match the sequence of declaring those files in tags. For example, #{greenscript.js 'a b c'/} does not necessarily output or marge javascript 'a.js', 'b.js' and 'c.js' in a sequence that a.js followed by b.js and then c.js. This is because greenscript output is driven by dependencies (which is defined in greenscript.conf), rather than the sequence declared in tag. Actually greenscript cannot and shouldn't follow the sequence declared in tag at all. The reason is 
+1. the sequence of tag declaration might conflict with dependencies declared in greenscript.conf
+2. it is hard to tell the sequence of tag declaration when the developer declare resources in multiple templates with inheritance relationships
+
+p. Now (start from v1.2d) greenscript support inline dependency declaration in tags, which basically remove the inconvenience that simple resource file dependencies are also require developer to provide a greenscript.conf file:
+
+bc. #{greenscript.js 'myapp &lt; mylib &lt; jquery-1.5.min'/}
+
+p. The above javascript declaration also setup the dependencies among the declared javascript resources: myapp.js relies on mylib.js which in turn relies on jquery-1.5.min. Therefore you no longer need a greenscript.conf file to define the dependencies among myapp, mylib and jquery-1.5.min javascript files.
+
+p. The limitation of inline dependency declaration is you can't use it across multiple template files. Say you have a javascript A declared in main.html and then you have another javascript B declared in index.html, you can't use inline dependency declaration to declare the dependency relationship between A and B unless you declare them all in index.html: #{greenscript 'A &gt; B'/}
+
+p. Reference
+
+bc. A &gt; B means B relies on A
+A &lt; A means A relies on B
 
 h4. <a>Media and Browser</a>
 
