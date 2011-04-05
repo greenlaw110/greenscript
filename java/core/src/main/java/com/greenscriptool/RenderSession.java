@@ -124,7 +124,7 @@ public class RenderSession implements IRenderSession {
     
     @Override
     public String outputInline() {
-        StringBuffer all = new StringBuffer();
+        StringBuilder all = new StringBuilder();
         for (StringBuffer sb: inlines_.values()) {
             all.append(sb);
             sb.delete(0, sb.length());

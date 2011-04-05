@@ -28,8 +28,8 @@ public abstract class BaseTest extends Assert {
     }
     
     protected String str(List<String> names) {
-        if (names.size() == 0) return "";
-        StringBuffer sb = new StringBuffer();
+        if (names.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
         sb.append(names.get(0));
         for (int i = 1; i < names.size(); ++i) {
             sb.append(",").append(names.get(i));

@@ -1,5 +1,6 @@
 package com.greenscriptool;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,7 +31,7 @@ public class DependenceManager implements IDependenceManager {
     
     private Map<String, Node> dependencies_ = new HashMap<String, Node>();
     public String debugString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("===============================================================")
           .append("\n DependencyManager debug information ");
         for (Node n: dependencies_.values()) {
@@ -41,24 +42,44 @@ public class DependenceManager implements IDependenceManager {
         return sb.toString();
     }
     
+    public DependenceManager(){}
+    
     /**
-     * Create a dependency manager with a properties which
+     * <p>Create a dependency manager with a properties which
      * contains a set of dependence relationships. The format
-     * of the properties shall look like:
+     * of the properties shall look like:</p>
      * 
+     * <code>
      * a=b,c,d
      * b=x,y
+     * </code>
      * 
-     * which means item a depends on b, c and d; b depends on
-     * x and y
+     * <p>which means item a depends on b, c and d; b depends on
+     * x and y</p>
+     * 
+     * <p>New in 1.2d:</p>
+     * 
+     * <code>
+     * a<b<c
+     * x>y>z
+     * ab=xy<z,o
+     * </code>
+     * 
+     * <p>which means item a depends on b and in turn depends on c;
+     * z depends on y which in turn depends on y;ab depends on both 
+     * xy, z and o, while xy depends on z</p>
      * 
      * @param dependencies
      */
     public DependenceManager(Properties dependencies) {
         for (String s: dependencies.stringPropertyNames()) {
             String v = dependencies.getProperty(s, "");
-            List<String> l = Arrays.asList(v.replaceAll("\\s+", "").split(SEPARATOR));
-            addDependency(s, l);
+            if (null != v && !v.trim().equals("")) {
+            	List<String> l = Arrays.asList(v.replaceAll("\\s+", "").split(SEPARATOR));
+            	createNode_(s, l);
+            } else {
+            	processInlineDependency(s);
+            }
         }
         for (Node n: dependencies_.values()) {
             n.rectify();
@@ -72,7 +93,7 @@ public class DependenceManager implements IDependenceManager {
 
     @Override
     public List<String> comprehend(Collection<String> resourceNames, boolean withDefault) {
-        if (resourceNames.size() == 0 && !withDefault) return Collections.emptyList();
+        if (resourceNames.isEmpty() && !withDefault) return Collections.emptyList();
         List<String> retList = new ArrayList<String>();
         Map<String, Node> nodes = new HashMap<String, Node>();
         List<String> undefs = new ArrayList<String>();
@@ -134,13 +155,16 @@ public class DependenceManager implements IDependenceManager {
     }
 
     @Override
-    public void addDependency(String dependent, Collection<String> dependsOn) {
+    public final void addDependency(String dependent, Collection<String> dependsOn) {
         createNode_(dependent, dependsOn);
+        for (Node n: dependencies_.values()) {
+            n.rectify();
+        }
     }
     
     public void processInlineDependency(String dependency) {
     	dependency = " " + dependency; // in order to match the regexp
-    	final Pattern p = Pattern.compile("(?=[\\s,;]+([\\w\\/\\-\\.]+\\s*[<>]\\s*[\\w\\/\\-\\.]+)[\\s,;$]*).");
+    	final Pattern p = Pattern.compile("(?=[\\s,;]+|(?<![\\w\\/\\-\\.:])([\\w\\/\\-\\.:]+\\s*[<>]\\s*[\\w\\/\\-\\.:]+))");
     	Matcher m = p.matcher(dependency); boolean found = false;
     	while (m.find()) {
     		found = true;
@@ -149,9 +173,9 @@ public class DependenceManager implements IDependenceManager {
     		String a = relation[0].trim();
     		String b = relation[1].trim();
     		if (g.indexOf('<') > -1) {
-    			addDependency(a, Arrays.asList(new String[]{b}));
+    			createNode_(a, Arrays.asList(new String[]{b}));
     		} else {
-    			addDependency(b, Arrays.asList(new String[]{a}));
+    			createNode_(b, Arrays.asList(new String[]{a}));
     		}
     	}
     	if (found) {
@@ -161,27 +185,17 @@ public class DependenceManager implements IDependenceManager {
     	}
     }
     
-    public static void main(String[] args) {
-//    	String s = "x-1.0 /x/b/a-1.0.js < b > c > d e f < g";
-//    	String regex = "([\\w\\/\\-\\.]+\\s*[<>]\\s*[\\w\\/\\-\\.]+)";
-//    	Pattern p = Pattern.compile(regex);
-//    	Matcher m = p.matcher(s);
-//    	while (m.find()) System.out.println(m.group());
+    public static void main(String[] args) throws IOException {
+        String s = "http://ahost.com/something.js > http://zbc-1.com.au/some/path/to/x19-v1.0.js < y < z < a > b > c > d";
+        String regex = "(?=[\\s,;]+|(?<![\\w\\/\\-\\.:])([\\w\\/\\-\\.:]+\\s*[<>]\\s*[\\w\\/\\-\\.:]+))";
 
-//    	String s = "x-1.0 /x/b/a-1.0.js < b > c > d e f < g";
-//        String regex = "(?=([\\w\\/\\-\\.]+\\s*[<>]\\s*[\\w\\/\\-\\.]+))";
-//        Pattern p = Pattern.compile(regex);
-//        Matcher m = p.matcher(s);
-//        while(m.find()) {
-//            System.out.println(m.group(1));
-//        }
-    	
-        String s = " something.js > /some/path/to/x19-v1.0.js < y < z < a > b > c > d";
-        String regex = "(?=[\\s,;]+([\\w\\/\\-\\.]+\\s*[<>]\\s*[\\w\\/\\-\\.]+)[\\s,;$]*).";
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(s);
-        while(m.find()) {
-            System.out.println(m.group(1));
+        while (m.find()) {
+            String d = m.group(1);
+            if(d != null) {
+                System.out.println(d);
+            }
         }
     }
     
@@ -287,10 +301,10 @@ public class DependenceManager implements IDependenceManager {
         public String debugString() {
             String openTag = String.format("<node name='%1$s' weight='%2$s'>", name_, weight_);
             String closeTag = "\n</node>";
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(openTag);
             for (Node n: dependOns_.values()) {
-                sb.append("\n\t" + n.debugString());
+                sb.append("\n\t").append(n.debugString());
             }
             sb.append(closeTag);
             return sb.toString();
@@ -330,7 +344,7 @@ public class DependenceManager implements IDependenceManager {
         Set<Node> allDependOns() {
             Set<Node> all = new HashSet<Node>();
             if (dirty_) {
-                if (dependOns_.size() != 0) {
+                if (!dependOns_.isEmpty()) {
                     for (Node n0: dependOns_.values()) {
                         all.addAll(n0.allDependOns());
                         all.add(n0);

@@ -157,7 +157,7 @@ public class Minimizer implements IMinimizer {
     @Override
     public List<String> process(List<String> resourceNames) {
         checkInitialize_(true);
-        if (resourceNames.size() == 0) return Collections.emptyList();
+        if (resourceNames.isEmpty()) return Collections.emptyList();
         if (minimize_) {
             return minimize_(resourceNames);
         } else {

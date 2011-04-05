@@ -237,7 +237,7 @@ public class GreenScriptPlugin extends PlayPlugin {
           p.setProperty(k, join_(oldS));
       }
 	}
-    
+	
     // type should be "js" or "css"
     private Properties loadDepProp_(Properties p, String type) {
         Properties p0 = new Properties();
