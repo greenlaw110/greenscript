@@ -77,7 +77,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         loadDependencies();
         InitializeMinimizers();
         
-        Logger.info("GreenScript-v1.2c initialized");
+        Logger.info("GreenScript-v1.2d initialized");
     }
 	
     @Override
