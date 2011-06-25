@@ -6,9 +6,11 @@ import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import play.Logger;
 import play.Play;
@@ -47,6 +49,8 @@ public class GreenScriptPlugin extends PlayPlugin {
     
     private Properties depConf_;
     private Properties minConf_;
+    
+    private HashMap<String, Long> configFiles_;
     
     private static Properties defProps_; static {
         defProps_ = new Properties();
@@ -156,6 +160,46 @@ public class GreenScriptPlugin extends PlayPlugin {
             return false;
         }
     }
+
+    private HashMap<String, Long> currentConfigFiles() {
+        HashMap<String, Long> files = new HashMap<String, Long>();
+        
+        for(VirtualFile vf : Play.roots) {
+            VirtualFile conf = vf.child("conf/greenscript.conf");
+            if (conf.exists()) {
+                files.put(conf.getRealFile().getAbsolutePath(), conf.getRealFile().lastModified());
+            }
+        }
+        
+        return files;
+    }
+    
+    private boolean filesChanged(HashMap<String, Long> oldFiles,  HashMap<String, Long> newFiles) {
+        if(oldFiles.size() != newFiles.size()) {
+            return true;
+        }
+        
+        for(Entry<String, Long> entry : oldFiles.entrySet()) {
+            Long newTime = newFiles.get(entry.getKey());
+            if(newTime == null || ! newTime.equals(entry.getValue())) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    @Override
+    public void detectChange() {
+        if(Play.mode == Play.Mode.PROD) {
+            return;
+        }
+        
+        if(filesChanged(this.configFiles_, currentConfigFiles())) {
+            Logger.debug("greenscript: config files changed, reloading dependencies");
+            GreenScriptPlugin.reloadDependencies();
+        }
+    }
     
     public void loadDependencies() {
         Properties p = new Properties();
@@ -170,6 +214,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         		}
         	}
         }
+        this.configFiles_ = this.currentConfigFiles();
         jsD_ = new DependenceManager(loadDepProp_(p, "js"));
         cssD_ = new DependenceManager(loadDepProp_(p, "css"));
         
