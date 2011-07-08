@@ -109,7 +109,7 @@ public class RenderSession implements IRenderSession {
             l = new ArrayList<String>();
             String[] sa = nameList.split(SEPARATOR);
             for (String s: sa) {
-                if (!l.contains(s)) l.add(s);
+                if (!l.contains(s) && !"".equals(s.trim())) l.add(s);
             }
         } else {
             l = Collections.emptyList();

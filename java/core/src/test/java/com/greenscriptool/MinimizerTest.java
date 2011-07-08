@@ -73,7 +73,7 @@ public class MinimizerTest extends BaseTest {
         // normal js case
         v_("/js/a.js,/js/b.js,/c.js", "a,b,/c", jm);
         // with cdn
-        v_("/js/a.js,http://abc.com/a.js,/js/b.js", "a,http://abc.com/a.js,/js/b.js", jm);
+        v_("/js/a.js,http://abc.com/a.js,/js/b.js", "a,http://abc.com/a.js,b.js", jm);
         
         // normal css case
         v_("/css/b.css,/f1/c.css,/css/a.css", "b,/f1/c.css,a", cm);
@@ -81,11 +81,13 @@ public class MinimizerTest extends BaseTest {
         // _bundle convention
         v_("/js/a.js", "a,abc.bundle", jm);
         
+        /* verifyResource is deprecated
         // bad resource when verifyResource is disabled
         v_("/js/a.js,/js/faked.js,/c.js", "a,faked,/c", jm);
+        */
         
-        // bad resource when verifyResource is enabled
-        cm.enableDisableVerifyResource(true);
+        // bad resource
+        // verifyResource is deprecated cm.enableDisableVerifyResource(true);
         v_("/css/a.css,/f1/c.css", "a,faked,/f1/c", cm);
         
     }
@@ -97,12 +99,13 @@ public class MinimizerTest extends BaseTest {
         p_("a,b,/c",jm);
         assertSame(1, l.size());
         assertTrue(l.get(0).startsWith(cacheUrlPath));
+        p_("a,b,/c",jm);
         
         // with CDN
         p_("a,http://abc.com/a.js,b,/c", jm);
-        assertSame(2, l.size());
-        assertTrue(l.get(1).startsWith(cacheUrlPath));
-        assertEquals("http://abc.com/a.js", l.get(0));
+        assertSame(3, l.size());
+        assertTrue(l.get(0).startsWith(cacheUrlPath));
+        assertEquals("http://abc.com/a.js", l.get(1));
         
         // cache is not enabled, so the 2 processes on same name list return different file name
         p_("a,b", jm);

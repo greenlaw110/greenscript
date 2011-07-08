@@ -81,7 +81,7 @@ public class DependenceManagerTest extends BaseTest {
     }
     
     /*
-     * default=x,y,b
+     * default=x<y
      * a=b
      * b=c
      */
@@ -89,8 +89,8 @@ public class DependenceManagerTest extends BaseTest {
     public void testDefaultDependencies() throws Exception {
         l_("default.properties");
         v_("c,b", "b", false);
-        v_("c,b,y,x,default", "b", true);
-        v_("c,b,y,x,default,a", "a", true);
+        v_("y,x,default,c,b", "b", true);
+        v_("y,x,default,c,b,a", "a", true);
     }
     
     /*

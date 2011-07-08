@@ -42,6 +42,21 @@ import com.greenscriptool.utils.YUICompressor;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
+    public static final String VERSION = "1.2.2";
+
+    private static String msg_(String msg, Object... args) {
+        return String.format("GreenScript-" + VERSION + "> %1$s",
+                String.format(msg, args));
+    }
+    
+    private static void info_(String msg, Object... args) {
+        Logger.info(msg_(msg, args));
+    }
+    
+    private static void trace_(String msg, Object... args) {
+        Logger.trace(msg_(msg, args));
+    }
+
     private Minimizer jsM_;
     private Minimizer cssM_;
     private IDependenceManager jsD_;
@@ -81,9 +96,9 @@ public class GreenScriptPlugin extends PlayPlugin {
         loadDependencies();
         InitializeMinimizers();
         
-        Logger.info("GreenScript-v1.2d initialized");
+        info_("initialized");
     }
-	
+    
     @Override
     public void onApplicationStop() {
         cleanUp_();
@@ -204,21 +219,22 @@ public class GreenScriptPlugin extends PlayPlugin {
     public void loadDependencies() {
         Properties p = new Properties();
         for (VirtualFile vf: Play.roots) {
-        	VirtualFile conf = vf.child("conf/greenscript.conf");
-        	if (conf.exists()) {
-                Logger.trace("loading dependency configuration from %1$s", conf.getRealFile().getAbsolutePath());
-        		try {
-        			p.load(new BufferedInputStream(conf.inputstream()));
-        		} catch (Exception e) {
-        			throw new UnexpectedException("error loading conf/greenscript.conf");
-        		}
-        	}
+            VirtualFile conf = vf.child("conf/greenscript.conf");
+            if (conf.exists()) {
+                trace_("loading dependency configuration from %1$s", conf.getRealFile().getAbsolutePath());
+                try {
+                    p.load(new BufferedInputStream(conf.inputstream()));
+                } catch (Exception e) {
+                    throw new UnexpectedException("error loading conf/greenscript.conf");
+                }
+            }
         }
         this.configFiles_ = this.currentConfigFiles();
         jsD_ = new DependenceManager(loadDepProp_(p, "js"));
         cssD_ = new DependenceManager(loadDepProp_(p, "css"));
         
         depConf_ = p;
+        info_("dependency loaded");
     }
     
     public void InitializeMinimizers() {
@@ -228,7 +244,7 @@ public class GreenScriptPlugin extends PlayPlugin {
             if (key.startsWith("greenscript.")) {
                 String v = p.getProperty(key);
                 minConf_.setProperty(key, p.getProperty(key));
-                Logger.trace("[greenscript]set %1$s to %2$s", v, key);
+                trace_("[greenscript]set %1$s to %2$s", v, key);
             }
         }
 
@@ -236,8 +252,10 @@ public class GreenScriptPlugin extends PlayPlugin {
         cssM_ = initializeMinimizer_(minConf_, ResourceType.CSS);
         
         if (p.containsKey("greenscript.useGoogleClosure")) {
-        	System.setProperty("greenscript.useGoogleClosure", p.getProperty("greenscript.useGoogleClosure"));
+            System.setProperty("greenscript.useGoogleClosure", p.getProperty("greenscript.useGoogleClosure"));
         }
+        
+        info_("minimizer initialized");
     }
     
     private IRenderSession newSession_(ResourceType type) {
@@ -257,19 +275,19 @@ public class GreenScriptPlugin extends PlayPlugin {
         p.putAll(minConf_);
         return p;
     }
-	
-	private String join_(Collection<String> c) {
-		boolean first = true;
-		StringBuffer sb = new StringBuffer();
-		for (String s: c) {
-			if (!first) sb.append(",");
-			else first = false;
-			sb.append(s);
-		}
-		return sb.toString();
-	}
-	
-	private void mergeProperties_(Properties p, String k, String v){
+    
+    private String join_(Collection<String> c) {
+        boolean first = true;
+        StringBuffer sb = new StringBuffer();
+        for (String s: c) {
+            if (!first) sb.append(",");
+            else first = false;
+            sb.append(s);
+        }
+        return sb.toString();
+    }
+    
+    private void mergeProperties_(Properties p, String k, String v){
       String oldV = p.getProperty(k);
       if (null == oldV) {
           p.setProperty(k, v);
@@ -281,8 +299,8 @@ public class GreenScriptPlugin extends PlayPlugin {
           oldS.addAll(newS);
           p.setProperty(k, join_(oldS));
       }
-	}
-	
+    }
+    
     // type should be "js" or "css"
     private Properties loadDepProp_(Properties p, String type) {
         Properties p0 = new Properties();
@@ -300,7 +318,7 @@ public class GreenScriptPlugin extends PlayPlugin {
                 } else {
                     mergeProperties_(p0, k0, v);
                 }
-                Logger.trace("Found one %1$s dependency: %2$s depends on '%3$s'", type, k0, v);
+                trace_("Found one %1$s dependency: %2$s depends on '%3$s'", type, k0, v);
             }
         }
         return p0;
@@ -330,13 +348,13 @@ public class GreenScriptPlugin extends PlayPlugin {
         m.enableDisableCompress(compress);
         m.enableDisableCache(cache);
         m.setFileLocator(new IFileLocator(){
-        	public File locate(String path) {
-        		VirtualFile vf = VirtualFile.search(Play.roots, path);
-        		return vf == null ? null : vf.getRealFile();
-        	}
+            public File locate(String path) {
+                VirtualFile vf = VirtualFile.search(Play.roots, path);
+                return vf == null ? null : vf.getRealFile();
+            }
         });
         
-        Logger.trace("minimizer for %1$s loaded", type.name());
+        trace_("minimizer for %1$s loaded", type.name());
         return m;
     }
     
@@ -370,7 +388,7 @@ public class GreenScriptPlugin extends PlayPlugin {
     }
     
     public static GreenScriptPlugin getInstance() {
-        for (PlayPlugin pp: Play.plugins) {
+        for (PlayPlugin pp: Play.pluginCollection.getEnabledPlugins()) {
             if (pp instanceof GreenScriptPlugin) return (GreenScriptPlugin)pp;
         }
         return null;
@@ -395,22 +413,34 @@ public class GreenScriptPlugin extends PlayPlugin {
         GreenScriptPlugin gs = getInstance();
         gs.jsM_.enableDisableMinimize(minimize);
         gs.minConf_.setProperty("greenscript.minimize", String.valueOf(minimize));
+        info_("minimize %s", minimize ? "enabled" : "disabled");
     }
 
     public static void enableDisableCompress(boolean compress) {
         GreenScriptPlugin gs = getInstance();
         gs.jsM_.enableDisableCompress(compress);
         gs.minConf_.setProperty("greenscript.compress", String.valueOf(compress));
+        info_("compress %s", compress ? "enabled" : "disabled");
     }
 
     public static void enableDisableCache(boolean cache) {
         GreenScriptPlugin gs = getInstance();
         gs.jsM_.enableDisableCache(cache);
         gs.minConf_.setProperty("greenscript.cache", String.valueOf(cache));
+        info_("cache %s", cache ? "enabled" : "disabled");
     }
     
     public static void reloadDependencies() {
         GreenScriptPlugin gs = getInstance();
         gs.loadDependencies();
+        info_("dependency reloaded");
     }
 }
+/*
+ * History
+ * -----------------------------------------------------------
+ * 1.2e: 
+ *  - use Play.pluginCollection.getEnabledPlugins() in place of Play.plugins
+ *  - greenscript.conf hot reloads on changes in DEV mode, merge from shorty-at / greenscript
+ *  - add bundle and cdn test application
+ */

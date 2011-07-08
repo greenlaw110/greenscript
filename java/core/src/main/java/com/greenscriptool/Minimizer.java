@@ -11,6 +11,8 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.inject.Inject;
 
@@ -75,6 +77,7 @@ public class Minimizer implements IMinimizer {
         if (logger_.isDebugEnabled()) logger_.debug("cache " + (enable ? "enabled" : "disabled"));
     }
     
+    @Deprecated
     public void enableDisableVerifyResource(boolean verify) {
         verifyResource_ = verify;
     }
@@ -150,6 +153,8 @@ public class Minimizer implements IMinimizer {
     	fl_ = fileLocator;
     }
     
+    
+    private ConcurrentMap<List<String>, List<String>> processCache_ = new ConcurrentHashMap<List<String>, List<String>>();
     /**
      * A convention used by this minimizer is resource name suffix with "_bundle". For
      * any resource with the name suffix with "_bundle"
@@ -159,7 +164,33 @@ public class Minimizer implements IMinimizer {
         checkInitialize_(true);
         if (resourceNames.isEmpty()) return Collections.emptyList();
         if (minimize_) {
-            return minimize_(resourceNames);
+            if (useCache_ && processCache_.containsKey(resourceNames)) {
+                // !!! cache of the return list instead of minimized file
+                return processCache_.get(resourceNames);
+            }
+            // CDN items will break the resource name list into 
+            // separate chunks in order to keep the dependency order
+            List<String> retLst = new ArrayList<String>();
+            List<String> tmpLst = new ArrayList<String>();
+            for (String fn: resourceNames) {
+                if (!fn.startsWith("http")) {
+                    tmpLst.add(fn);
+                } else {
+                    if (tmpLst.size() > 0) {
+                        retLst.add(minimize_(tmpLst));
+                        tmpLst.clear();
+                    }
+                    retLst.add(fn);
+                }
+            }
+            if (tmpLst.size() > 0) {
+                retLst.add(minimize_(tmpLst));
+                tmpLst.clear();
+            }
+            
+//            return minimize_(resourceNames);
+            processCache_.put(resourceNames, retLst);
+            return retLst;
         } else {
             List<String> l = new ArrayList<String>();
             String urlPath = resourceUrlPath_;
@@ -167,9 +198,13 @@ public class Minimizer implements IMinimizer {
                 if (fn.startsWith("http")) l.add(fn); // CDN resource
                 else {
                     String s = fn.replace(type_.getExtension(), "");
-                    if (verifyResource_ || s.equalsIgnoreCase("default") || s.endsWith(IDependenceManager.BUNDLE_SUFFIX)) {
+                    if (s.equalsIgnoreCase("default") || s.endsWith(IDependenceManager.BUNDLE_SUFFIX)) {
+                        continue;
+                    } else {
                         File f = getFile_(fn);
-                        if (null == f || !f.isFile()) continue;
+                        if (null == f || !f.isFile()) {
+                            continue;
+                        }
                     }
                     String ext = type_.getExtension();
                     fn = fn.endsWith(ext) ? fn : fn + ext; 
@@ -181,24 +216,25 @@ public class Minimizer implements IMinimizer {
         }
     }
     
-    private List<String> minimize_(List<String> resourceNames) {
+    private String minimize_(List<String> resourceNames) {
         FileCache cache = cache_;
         
-        List<String> l = new ArrayList<String>();
+//        List<String> l = new ArrayList<String>();
         if (useCache_) {
             String fn = cache.get(resourceNames);
             if (null != fn) {
                 if (logger_.isDebugEnabled())
                     logger_.debug("cached file returned: " + fn);
-                l.add(cacheUrlPath_ + fn);
+//                l.add(cacheUrlPath_ + fn);
+                return cacheUrlPath_ + fn;
                 
-                for (String s: resourceNames) {
-                    if (s.startsWith("http")) {
-                        l.add(s);
-                    }
-                }
+//                for (String s: resourceNames) {
+//                    if (s.startsWith("http")) {
+//                        l.add(s);
+//                    }
+//                }
                 
-                return l;
+//                return l;
             }
         }
         
@@ -207,7 +243,8 @@ public class Minimizer implements IMinimizer {
         try {
             out = new BufferedWriter(new FileWriter(outFile, true));
             for (String s: resourceNames) {
-                if (s.startsWith("http:")) l.add(s);
+//                if (s.startsWith("http:")) l.add(s);
+                if (s.startsWith("http:")) throw new IllegalArgumentException("CDN resource not expected in miminize method");
                 else {
                     File f = getFile_(s);
                     if (null != f && f.exists()) merge_(f, out);
@@ -232,8 +269,9 @@ public class Minimizer implements IMinimizer {
         // Note it's absolutely not a good idea to turn cache off
         // and minimize on in a production environment
         cache.put(resourceNames, fn);
-        l.add(cacheUrlPath_ + fn);
-        return l;
+//        l.add(cacheUrlPath_ + fn);
+//        return l;
+        return cacheUrlPath_ + fn;
     }
     
     private void merge_(File file, Writer out) {

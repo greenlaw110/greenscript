@@ -4,9 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import controllers.Secure;
+
 import play.modules.greenscript.GreenScriptPlugin;
 import play.mvc.Controller;
+import play.mvc.With;
 
+@With(Secure.class)
 public class Configurator extends Controller {
 
     public static void configure() {
