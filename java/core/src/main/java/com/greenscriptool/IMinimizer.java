@@ -159,7 +159,7 @@ public interface IMinimizer extends IProcessor {
     void clearCache();
     
     /**
-     * <p>process a given list of file names and return urls points to the processed resources</p>
+     * <p>process a given list of file names and return urls point to the processed resources</p>
      * 
      * <p>Note pseudo resources (bundle without real resource peer) might be put into the 
      * resource name list. In case a pseudo resource encountered, the process will simply
@@ -192,6 +192,14 @@ public interface IMinimizer extends IProcessor {
      * @throws NullPointerException if fileNames is null
      */
     List<String> process(List<String> resourceNames);
+    
+    /**
+     * <p>process a give list of file names and return urls point to the processed resources</p>
+     * 
+     * @param resourceNames
+     * @return
+     */
+    List<String> processWithoutMinimize(List<String> resourceNames);
     
     /**
      * Set file locator

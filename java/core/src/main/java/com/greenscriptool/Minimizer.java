@@ -62,6 +62,7 @@ public class Minimizer implements IMinimizer {
     public void enableDisableMinimize(boolean enable) {
         minimize_ = enable;
         if (logger_.isDebugEnabled()) logger_.debug("minimize " + (enable ? "enabled" : "disabled"));
+        clearCache();
     }
 
     @Override
@@ -75,6 +76,7 @@ public class Minimizer implements IMinimizer {
     public void enableDisableCache(boolean enable) {
         useCache_ = enable;
         if (logger_.isDebugEnabled()) logger_.debug("cache " + (enable ? "enabled" : "disabled"));
+        clearCache();
     }
     
     @Deprecated
@@ -140,6 +142,8 @@ public class Minimizer implements IMinimizer {
     @Override
     public void clearCache() {
         cache_.clear();
+        processCache2_.clear();
+        processCache_.clear();
     }
     
     private IFileLocator fl_ = new IFileLocator(){
@@ -155,6 +159,7 @@ public class Minimizer implements IMinimizer {
     
     
     private ConcurrentMap<List<String>, List<String>> processCache_ = new ConcurrentHashMap<List<String>, List<String>>();
+    private ConcurrentMap<List<String>, List<String>> processCache2_ = new ConcurrentHashMap<List<String>, List<String>>();
     /**
      * A convention used by this minimizer is resource name suffix with "_bundle". For
      * any resource with the name suffix with "_bundle"
@@ -192,28 +197,41 @@ public class Minimizer implements IMinimizer {
             processCache_.put(resourceNames, retLst);
             return retLst;
         } else {
-            List<String> l = new ArrayList<String>();
-            String urlPath = resourceUrlPath_;
-            for (String fn: resourceNames) {
-                if (fn.startsWith("http")) l.add(fn); // CDN resource
-                else {
-                    String s = fn.replace(type_.getExtension(), "");
-                    if (s.equalsIgnoreCase("default") || s.endsWith(IDependenceManager.BUNDLE_SUFFIX)) {
-                        continue;
-                    } else {
-                        File f = getFile_(fn);
-                        if (null == f || !f.isFile()) {
-                            continue;
-                        }
-                    }
-                    String ext = type_.getExtension();
-                    fn = fn.endsWith(ext) ? fn : fn + ext; 
-                    if (fn.startsWith("/")) l.add(fn);
-                    else l.add(urlPath + fn);
-                }
-            }
-            return l;
+            List<String> retLst = processWithoutMinimize(resourceNames);
+            return retLst;
         }
+    }
+    
+    @Override
+    public List<String> processWithoutMinimize(List<String> resourceNames) {
+        checkInitialize_(true);
+        if (resourceNames.isEmpty()) return Collections.emptyList();
+        if (useCache_ && processCache2_.containsKey(resourceNames)) {
+            // !!! cache of the return list instead of minimized file
+            return processCache2_.get(resourceNames);
+        }
+        List<String> l = new ArrayList<String>();
+        String urlPath = resourceUrlPath_;
+        for (String fn: resourceNames) {
+            if (fn.startsWith("http")) l.add(fn); // CDN resource
+            else {
+                String s = fn.replace(type_.getExtension(), "");
+                if (s.equalsIgnoreCase("default") || s.endsWith(IDependenceManager.BUNDLE_SUFFIX)) {
+                    continue;
+                } else {
+                    File f = getFile_(fn);
+                    if (null == f || !f.isFile()) {
+                        continue;
+                    }
+                }
+                String ext = type_.getExtension();
+                fn = fn.endsWith(ext) ? fn : fn + ext; 
+                if (fn.startsWith("/")) l.add(fn);
+                else l.add(urlPath + fn);
+            }
+        }
+        processCache2_.put(resourceNames, l);
+        return l;
     }
     
     private String minimize_(List<String> resourceNames) {
@@ -246,6 +264,9 @@ public class Minimizer implements IMinimizer {
 //                if (s.startsWith("http:")) l.add(s);
                 if (s.startsWith("http:")) throw new IllegalArgumentException("CDN resource not expected in miminize method");
                 else {
+                    if (s.startsWith(resourceUrlPath_)) {
+                        s = s.replaceFirst(resourceUrlPath_, "");
+                    }
                     File f = getFile_(s);
                     if (null != f && f.exists()) merge_(f, out);
                     else ; // possibly a pseudo or error resource name

@@ -114,10 +114,20 @@ public class RenderSession implements IRenderSession {
         } else {
             l = Collections.emptyList();
         }
-                
-        l = l.isEmpty() ? l : m_.process(l);
-        l.removeAll(loaded_);
-        loaded_.addAll(l);
+        
+        if (l.isEmpty()) return l;
+        
+        if (m_.isMinimizeEnabled()) {
+            l = m_.processWithoutMinimize(l);
+            l.removeAll(loaded_);
+            loaded_.addAll(l);
+            l = m_.process(l);
+        } else {
+            l = m_.process(l);
+            l.removeAll(loaded_);
+            loaded_.addAll(l);
+        }
+
         if (logger_.isTraceEnabled()) logger_.trace("output items: " + l);
         return l;
     }
