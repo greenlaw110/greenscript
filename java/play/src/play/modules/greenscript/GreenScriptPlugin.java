@@ -42,7 +42,7 @@ import com.greenscriptool.utils.YUICompressor;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.2a";
+    public static final String VERSION = "1.2.3";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -439,8 +439,10 @@ public class GreenScriptPlugin extends PlayPlugin {
 /*
  * History
  * -----------------------------------------------------------
- * 1.2.2a:
+ * 1.2.3:
  *  - upgrade YUI compressor from 2.4.2 to 2.4.6
+ *  - Fix bug: 404 error while fetching cached files when change minimize/cache setting dynamically
+ *  - Fix bug: loaded logic breaks when minimize is enabled
  * 1.2.2: 
  *  - use Play.pluginCollection.getEnabledPlugins() in place of Play.plugins
  *  - greenscript.conf hot reloads on changes in DEV mode, merge from shorty-at / greenscript
