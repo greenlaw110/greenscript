@@ -3,6 +3,11 @@ h1. GreenScript module
 The GreenScript module help you to manage javascript and CSS dependencies and do minimizing work in the same time.
 <script type="text/javascript" src="http://www.ohloh.net/p/485839/widgets/project_users_logo.js"></script>
 
+h2. <a>What's New for v1.2.4</a>
+
+* add "greenscript.url.root" option which is set to "/public" by default
+* Intelligent resouce root detect. Suppose your javascript foo.js located at /public/bar/foo.js and your "greenscript.dir.root" set to "/public" as default. you can reference foo.js by either "/public/bar/foo.js" or "/bar/foo.js", but "foo.js" is not okay, give your "greenscript.dir.js" is set to "javascripts" by default. "foo.js" will be evaluated as "/public/javascripts/foo.js".
+
 h2. <a>What's New for v1.2.3</a>
 
 * upgrade YUI compressor version from 2.4.2 to 2.4.6

@@ -41,6 +41,7 @@ public class Minimizer implements IMinimizer {
     private String resourceDir_;
     private String rootDir_;
     
+    private String resourceUrlRoot_ = "";
     private String resourceUrlPath_;
     private String cacheUrlPath_;
     
@@ -122,12 +123,21 @@ public class Minimizer implements IMinimizer {
     }
     
     @Override
+    public void setResourceUrlRoot(String urlRoot) {
+        if (!urlRoot.startsWith("/")) throw new IllegalArgumentException("url root must start with /");
+        checkInitialize_(false);
+        if (!urlRoot.endsWith("/")) urlRoot = urlRoot + "/";
+        resourceUrlRoot_ = urlRoot;
+        if (logger_.isDebugEnabled()) logger_.debug(String.format("url root set to %1$s", urlRoot));
+    }
+    
+    @Override
     public void setResourceUrlPath(String urlPath) {
         if (!urlPath.startsWith("/")) throw new IllegalArgumentException("url path must start with /");
         checkInitialize_(false);
         if (!urlPath.endsWith("/")) urlPath = urlPath + "/";
         resourceUrlPath_ = urlPath;
-        if (logger_.isDebugEnabled()) logger_.debug(String.format("url root set to %1$s", urlPath));
+        if (logger_.isDebugEnabled()) logger_.debug(String.format("url path set to %1$s", urlPath));
     }
     
     @Override
@@ -226,7 +236,10 @@ public class Minimizer implements IMinimizer {
                 }
                 String ext = type_.getExtension();
                 fn = fn.endsWith(ext) ? fn : fn + ext; 
-                if (fn.startsWith("/")) l.add(fn);
+                if (fn.startsWith("/")) {
+                    if (!fn.startsWith(resourceUrlRoot_)) l.add(resourceUrlRoot_ + fn.replaceFirst("/", ""));
+                    else l.add(fn);
+                }
                 else l.add(urlPath + fn);
             }
         }
@@ -318,7 +331,12 @@ public class Minimizer implements IMinimizer {
     private File getFile_(String resourceName) {
         String fn = resourceName, ext = type_.getExtension();
         fn = fn.endsWith(ext) ? fn : fn + ext;
-        String path = (fn.startsWith("/")) ? rootDir_ + fn : rootDir_ + File.separator + resourceDir_ + File.separator + fn;
+        String path;
+        if (fn.startsWith("/")) {
+            path = (!fn.startsWith(rootDir_)) ? rootDir_ + fn.replaceFirst("/", "") : fn; 
+        } else {
+            path = rootDir_ + File.separator + resourceDir_ + File.separator + fn;
+        }
         return fl_.locate(path);
     }
 

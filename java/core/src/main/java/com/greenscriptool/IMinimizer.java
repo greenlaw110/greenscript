@@ -141,6 +141,13 @@ public interface IMinimizer extends IProcessor {
     void setResourceUrlPath(String urlPath);
     
     /**
+     * <p>Set the resource URL root (corresponding to {@link #setRootDir(String)}).
+     * 
+     * @param urlRoot
+     */
+    void setResourceUrlRoot(String urlRoot);
+    
+    /**
      * <p>Set the url path of processed resources. The <code>urlPath</code> 
      * specified must start with "/".</p> 
      * 

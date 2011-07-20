@@ -42,7 +42,7 @@ import com.greenscriptool.utils.YUICompressor;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.3";
+    public static final String VERSION = "1.2.4";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -75,6 +75,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         defProps_.put("greenscript.dir.css", "stylesheets");
         defProps_.put("greenscript.dir.minimized", "/public/gs");
         // url paths
+        defProps_.put("greenscript.url.root", "/public");
         defProps_.put("greenscript.url.js", "/public/javascripts");
         defProps_.put("greenscript.url.css", "/public/stylesheets");
         defProps_.put("greenscript.url.minimized", "/public/gs");
@@ -331,12 +332,14 @@ public class GreenScriptPlugin extends PlayPlugin {
         String resourceDir = fetchProp_(p, "greenscript.dir" + ext);
         String cacheDir = fetchProp_(p, "greenscript.dir.minimized");
         
+        String urlRoot = fetchProp_(p, "greenscript.url.root");
         String resourceUrl = fetchProp_(p, "greenscript.url" + ext);
         String cacheUrl = fetchProp_(p, "greenscript.url.minimized");
         
         m.setCacheDir(Play.getFile(cacheDir));
         m.setCacheUrlPath(cacheUrl);
         m.setResourceDir(resourceDir);
+        m.setResourceUrlRoot(urlRoot);
         m.setResourceUrlPath(resourceUrl);
         m.setRootDir(rootDir);
         
