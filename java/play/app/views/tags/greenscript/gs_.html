@@ -17,7 +17,6 @@
     def all = _all || _output ==~ /(?i)all/ || _loadMissing || _loadAll  
     def withDeps = deps || _output ==~ /(?i)deps/
 }%
-
 #{if output}
     #{if all}
         *{default browser with default media}*
@@ -37,7 +36,6 @@
 #{greenscript.output_ sm:sm, nameList: nameList, withDeps: withDeps, all: all, media: media, browser: browser, id: _id, charset: _charset, type: _type /}
     #{/else}
 #{/if}
-
 *{handle inline case}*
 %{
     def inline
@@ -55,7 +53,6 @@
         sm.declareInline(inline, priority)
     }
 }%
-
 #{if inline && _output}
     #{greenscript.openTag_ type: _type/}
 ${inline.raw()}

@@ -8,15 +8,18 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Map.Entry;
+import java.util.UUID;
 
 import play.Logger;
 import play.Play;
 import play.Play.Mode;
 import play.PlayPlugin;
+import play.cache.Cache;
 import play.exceptions.UnexpectedException;
+import play.mvc.Router;
 import play.mvc.Http.Request;
 import play.mvc.Http.Response;
 import play.vfs.VirtualFile;
@@ -28,6 +31,8 @@ import com.greenscriptool.IRenderSession;
 import com.greenscriptool.Minimizer;
 import com.greenscriptool.RenderSession;
 import com.greenscriptool.ResourceType;
+import com.greenscriptool.utils.BufferResource;
+import com.greenscriptool.utils.IBufferLocator;
 import com.greenscriptool.utils.ICompressor;
 import com.greenscriptool.utils.YUICompressor;
 
@@ -35,6 +40,8 @@ import com.greenscriptool.utils.YUICompressor;
  * Define a Playframework plugin
  * 
  * @author greenlaw110@gmail.com
+ * @version 1.2.5, 2011-08-07
+ *          support in-memory cache
  * @version 1.2.1, 2011-01-20 
  *           1. support reverse dependency declaration, e.g:
  *           * js.jquery-1.4.4-=jquery-ui.1.8.7,jquery.tmpl
@@ -42,7 +49,7 @@ import com.greenscriptool.utils.YUICompressor;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.4";
+    public static final String VERSION = "1.2.5";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -83,6 +90,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         defProps_.setProperty("greenscript.minimize", Play.mode == Mode.PROD ? "true" : "false");
         defProps_.setProperty("greenscript.compress", "true");
         defProps_.setProperty("greenscript.cache", "true");
+        defProps_.setProperty("greenscript.cache.inmemory", "false");
     }
     
     public GreenScriptPlugin() {
@@ -98,6 +106,24 @@ public class GreenScriptPlugin extends PlayPlugin {
         InitializeMinimizers();
         
         info_("initialized");
+    }
+    
+    private void updateRoute_() {
+        if (inMemoryCache) {
+            String url = fetchProp_(Play.configuration, "greenscript.url.minimized");
+            Router.addRoute(0, "GET", 
+                    url + "/{key}", 
+                    "greenscript.Service.getInMemoryCache",
+                    null,
+                    null);
+        } else {
+            Router.load(Play.ctxPath);
+        }
+    }
+    
+    @Override
+    public void onApplicationStart() {
+        updateRoute_();
     }
     
     @Override
@@ -251,6 +277,7 @@ public class GreenScriptPlugin extends PlayPlugin {
 
         jsM_ = initializeMinimizer_(minConf_, ResourceType.JS);
         cssM_ = initializeMinimizer_(minConf_, ResourceType.CSS);
+
         
         if (p.containsKey("greenscript.useGoogleClosure")) {
             System.setProperty("greenscript.useGoogleClosure", p.getProperty("greenscript.useGoogleClosure"));
@@ -324,7 +351,8 @@ public class GreenScriptPlugin extends PlayPlugin {
         }
         return p0;
     }
-    
+    public static final String CACHE_KEY_BUFFER = "greenscript.buffer";
+    protected boolean inMemoryCache = false;
     private Minimizer initializeMinimizer_(Properties p, ResourceType type) {
         Minimizer m = new Minimizer(type);
         String ext = type.getExtension();
@@ -346,20 +374,46 @@ public class GreenScriptPlugin extends PlayPlugin {
         boolean minimize = getBooleanProp_(p, "greenscript.minimize", Play.mode == Mode.PROD);
         boolean compress = getBooleanProp_(p, "greenscript.compress", true);
         boolean cache = getBooleanProp_(p, "greenscript.cache", true);
+        inMemoryCache = getBooleanProp_(p, "greenscript.cache.inmemory", false);
         
         m.enableDisableMinimize(minimize);
         m.enableDisableCompress(compress);
         m.enableDisableCache(cache);
+        m.enableDisableInMemoryCache(inMemoryCache);
         m.setFileLocator(new IFileLocator(){
+            @Override
             public File locate(String path) {
                 VirtualFile vf = VirtualFile.search(Play.roots, path);
                 return vf == null ? null : vf.getRealFile();
             }
         });
+        m.setBufferLocator(bufferLocator_);
         
         trace_("minimizer for %1$s loaded", type.name());
         return m;
     }
+    
+    public String getInMemoryFileContent(String key) {
+        BufferResource br = bufferLocator_.locate(key);
+        return null == br ? null : br.toString();
+    }
+    
+    private IBufferLocator bufferLocator_ = new IBufferLocator() {
+        private String key_(String key) {
+            return String.format("%s.%s", CACHE_KEY_BUFFER, key);
+        }
+        @Override
+        public BufferResource locate(String key) {
+            return Cache.get(key_(key), BufferResource.class);
+        }
+        @Override
+        public BufferResource newBuffer(String extension) {
+            String key = UUID.randomUUID().toString() + extension;
+            BufferResource buffer = new BufferResource(key);
+            Cache.set(key_(key), buffer);
+            return buffer;
+        }
+    };
     
     private String fetchProp_(Properties p, String key) {
         String val = p.getProperty(key);
@@ -397,19 +451,25 @@ public class GreenScriptPlugin extends PlayPlugin {
         return null;
     }
     
-    public static void updateMinimizer(boolean minimize, boolean compress, boolean cache) {
+    public static void updateMinimizer(boolean minimize, boolean compress, boolean cache, boolean inMemoryCache) {
         GreenScriptPlugin gs = getInstance();
         gs.jsM_.enableDisableMinimize(minimize);
         gs.jsM_.enableDisableCompress(compress);
         gs.jsM_.enableDisableCache(cache);
+        gs.jsM_.enableDisableInMemoryCache(inMemoryCache);
         
         gs.cssM_.enableDisableMinimize(minimize);
         gs.cssM_.enableDisableCompress(compress);
         gs.cssM_.enableDisableCache(cache);
+        gs.cssM_.enableDisableInMemoryCache(inMemoryCache);
+        gs.inMemoryCache = inMemoryCache;
+
+        gs.updateRoute_();
 
         gs.minConf_.setProperty("greenscript.minimize", String.valueOf(minimize));
         gs.minConf_.setProperty("greenscript.compress", String.valueOf(compress));
         gs.minConf_.setProperty("greenscript.cache", String.valueOf(cache));
+        gs.minConf_.setProperty("greenscript.cache.inmemory", String.valueOf(inMemoryCache));
     }
 
     public static void enableDisableMinimize(boolean minimize) {
@@ -442,6 +502,8 @@ public class GreenScriptPlugin extends PlayPlugin {
 /*
  * History
  * -----------------------------------------------------------
+ * 1.2.5:
+ *  - support in memory cache
  * 1.2.3:
  *  - upgrade YUI compressor from 2.4.2 to 2.4.6
  *  - Fix bug: 404 error while fetching cached files when change minimize/cache setting dynamically

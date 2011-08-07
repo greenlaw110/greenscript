@@ -1,8 +1,6 @@
 package com.greenscriptool;
 
 import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 
@@ -40,6 +38,7 @@ public class MinimizerTest extends BaseTest {
         jm.setCacheDir(cacheDir);
         jm.setResourceUrlPath(jsUrlPath);
         jm.setCacheUrlPath(cacheUrlPath);
+        //jm.enableDisableInMemoryCache(true);
         
         cm = new Minimizer(ResourceType.CSS);
         cm.setRootDir(rootDir.getAbsolutePath());

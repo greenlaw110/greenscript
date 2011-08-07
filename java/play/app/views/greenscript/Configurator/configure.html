@@ -90,6 +90,15 @@
 		        				<input type="checkbox" name="cache" value="true" #{if minConf.getProperty('greenscript.cache') == 'true'}checked="checked"#{/if}/>Cache
 		        				<input type="hidden" name="cache" value="false"/>
 		        			</p>
+                            <p>
+                                <label for="inMemoryCache">In Memory Cache </label>
+                                <span class="info">
+                                    If inMemoryCache is enabled, the compressed version of your css/js files will be created in
+                                    an memory buffer instead of in a real file.
+                                </span><br/>
+                                <input type="checkbox" name="inMemoryCache" value="true" #{if minConf.getProperty('greenscript.cache.inmemory') == 'true'}checked="checked"#{/if}/>In Memory Cache
+                                <input type="hidden" name="inMemoryCache" value="false"/>
+                            </p>
 		        			<p>
 		        				<input type="submit" value="submit"/>
 		        			</p>

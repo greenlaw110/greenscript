@@ -41,8 +41,8 @@ public class Configurator extends Controller {
         render(cssDeps, jsDeps, minConf, jsDebug, cssDebug);
     }
 
-    public static void update(boolean minimize, boolean compress, boolean cache) {
-        GreenScriptPlugin.updateMinimizer(minimize, compress, cache);
+    public static void update(boolean minimize, boolean compress, boolean cache, boolean inMemoryCache) {
+        GreenScriptPlugin.updateMinimizer(minimize, compress, cache, inMemoryCache);
         
         flash.success("Setting updated");
         flash.keep();

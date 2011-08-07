@@ -3,6 +3,8 @@ package com.greenscriptool;
 import java.io.File;
 import java.util.List;
 
+import com.greenscriptool.utils.IBufferLocator;
+
 /**
  * <p>an <code>IMinimizer</code> is a specialized {@link IProcessor} in that it
  * can merge/compress resources.</p>
@@ -81,6 +83,16 @@ public interface IMinimizer extends IProcessor {
      * @param enable true to enable cache, false to disable it
      */
     void enableDisableCache(boolean enable);
+    
+    /**
+     * <p>Enable or Disable in memory cache</p>
+     * 
+     * <p>If <code>inMemoryCache</code> is enabled then the result of {@link #process(List)}
+     * shall be stored in memory buffer instead of a temporary file
+     * 
+     * <p><code>InMemoryCache</code> option has no effect when <code>cache</code> is disabled
+     */
+    void enableDisableInMemoryCache(boolean inMemory);
     
     /**
      * Return <code>minimize</code> setting
@@ -214,4 +226,5 @@ public interface IMinimizer extends IProcessor {
      */
     void setFileLocator(IFileLocator fileLocator);
     
+    void setBufferLocator(IBufferLocator bufferLocator);
 }

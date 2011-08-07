@@ -1,10 +1,8 @@
 package com.greenscriptool;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -19,8 +17,11 @@ import javax.inject.Inject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.greenscriptool.utils.BufferLocator;
 import com.greenscriptool.utils.FileCache;
+import com.greenscriptool.utils.FileResource;
 import com.greenscriptool.utils.GreenScriptCompressor;
+import com.greenscriptool.utils.IBufferLocator;
 import com.greenscriptool.utils.ICompressor;
 
 public class Minimizer implements IMinimizer {
@@ -30,12 +31,7 @@ public class Minimizer implements IMinimizer {
     private boolean minimize_;
     private boolean compress_;
     private boolean useCache_;
-    
-    /**
-     * if this flag set to true, then minimizer will try to verify
-     * each resource, test if the resource exists during processing
-     */
-    private boolean verifyResource_;
+    private boolean inMemory_;
     
     private FileCache cache_;
     private String resourceDir_;
@@ -80,9 +76,16 @@ public class Minimizer implements IMinimizer {
         clearCache();
     }
     
+    @Override
+    public void enableDisableInMemoryCache(boolean enable) {
+        inMemory_ = enable;
+        if (logger_.isDebugEnabled()) logger_.debug("in memory cache " + (enable ? "enabled" : "disabled"));
+        clearCache();
+    }
+    
     @Deprecated
     public void enableDisableVerifyResource(boolean verify) {
-        verifyResource_ = verify;
+        //verifyResource_ = verify;
     }
 
     @Override
@@ -156,15 +159,18 @@ public class Minimizer implements IMinimizer {
         processCache_.clear();
     }
     
-    private IFileLocator fl_ = new IFileLocator(){
-    	public File locate(String path) {
-    		return new File(path);
-    	}
-    }; 
+    private IFileLocator fl_ = FileResource.defFileLocator; 
     @Override
     public void setFileLocator(IFileLocator fileLocator) {
     	if (null == fileLocator) throw new NullPointerException();
     	fl_ = fileLocator;
+    }
+    
+    private IBufferLocator bl_ = new BufferLocator();
+    @Override
+    public void setBufferLocator(IBufferLocator bufferLocator){
+        if (null == bufferLocator) throw new NullPointerException();
+        bl_ = bufferLocator;
     }
     
     
@@ -269,10 +275,10 @@ public class Minimizer implements IMinimizer {
             }
         }
         
-        File outFile = newCacheFile_();
+        IResource rsrc = newCache_();
         Writer out = null;
         try {
-            out = new BufferedWriter(new FileWriter(outFile, true));
+            out = rsrc.getWriter();
             for (String s: resourceNames) {
 //                if (s.startsWith("http:")) l.add(s);
                 if (s.startsWith("http:")) throw new IllegalArgumentException("CDN resource not expected in miminize method");
@@ -285,7 +291,7 @@ public class Minimizer implements IMinimizer {
                     else ; // possibly a pseudo or error resource name
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
             if (out != null) {
@@ -297,7 +303,7 @@ public class Minimizer implements IMinimizer {
             }
         }
         
-        String fn = outFile.getName();
+        String fn = rsrc.getKey();
         // filename always cached without regarding to cache setting
         // this is a good time to remove previous file
         // Note it's absolutely not a good idea to turn cache off
@@ -352,6 +358,14 @@ public class Minimizer implements IMinimizer {
             }
         } finally {
             if (null != r) r.close();
+        }
+    }
+    
+    private IResource newCache_() {
+        if (inMemory_) {
+            return bl_.newBuffer(type_.getExtension());
+        } else {
+            return new FileResource(newCacheFile_());
         }
     }
 
