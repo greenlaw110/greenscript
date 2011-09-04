@@ -241,6 +241,14 @@ public interface IMinimizer extends IProcessor {
     String processInline(String text);
     
     /**
+     * <p>process static content</p>
+     * 
+     * @param file
+     * @return
+     */
+    String processStatic(File file);
+    
+    /**
      * Set file locator
      * @param fileLocator
      */

@@ -68,7 +68,7 @@ public class Minimizer implements IMinimizer {
 
     @Override
     public void enableDisableMinimize(boolean enable) {
-        minimize_ = enable;
+        minimize_ = enable || ResourceType.CSS == type_;
         if (logger_.isDebugEnabled())
             logger_.debug("minimize " + (enable ? "enabled" : "disabled"));
         clearCache();
@@ -114,7 +114,8 @@ public class Minimizer implements IMinimizer {
 
     @Override
     public boolean isMinimizeEnabled() {
-        return minimize_;
+        // now css type resource is always minimized
+        return minimize_ || ResourceType.CSS == type_;
     }
 
     @Override
@@ -302,19 +303,41 @@ public class Minimizer implements IMinimizer {
     }
 
     @Override
-    public String processInline(String text) {
-        if (!processInline_) return text;
+    public String processInline(String content) {
+        if (!processInline_) return content;
         try {
             if (lessEnabled_()) {
-                text = less_.compile(text);
+                content = less_.compile(content);
             }
             if (this.compress_) {
-                Reader r = new StringReader(text);
+                Reader r = new StringReader(content);
                 StringWriter w = new StringWriter();
                 compressor_.compress(r, w);
                 return w.toString();
             } else {
-                return text;
+                return content;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    @Override
+    public String processStatic(File file) {
+        String content;
+        try {
+            if (lessEnabled_()) {
+                content = less_.compile(file);
+            } else {
+                content = fileToString_(file);
+            }
+            if (this.compress_) {
+                Reader r = new StringReader(content);
+                StringWriter w = new StringWriter();
+                compressor_.compress(r, w);
+                return w.toString();
+            } else {
+                return content;
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

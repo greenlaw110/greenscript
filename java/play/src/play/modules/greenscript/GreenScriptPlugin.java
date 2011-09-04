@@ -2,8 +2,6 @@ package play.modules.greenscript;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,14 +26,13 @@ import play.vfs.VirtualFile;
 import com.greenscriptool.DependenceManager;
 import com.greenscriptool.IDependenceManager;
 import com.greenscriptool.IFileLocator;
+import com.greenscriptool.IMinimizer;
 import com.greenscriptool.IRenderSession;
 import com.greenscriptool.Minimizer;
 import com.greenscriptool.RenderSession;
 import com.greenscriptool.ResourceType;
 import com.greenscriptool.utils.BufferResource;
 import com.greenscriptool.utils.IBufferLocator;
-import com.greenscriptool.utils.ICompressor;
-import com.greenscriptool.utils.YUICompressor;
 
 /**
  * Define a Playframework plugin
@@ -171,8 +168,8 @@ public class GreenScriptPlugin extends PlayPlugin {
     }
     
     
-    private static YUICompressor jsC_ = new YUICompressor(ResourceType.JS);
-    private static YUICompressor cssC_ = new YUICompressor(ResourceType.CSS);
+    //private static YUICompressor jsC_ = new YUICompressor(ResourceType.JS);
+    //private static YUICompressor cssC_ = new YUICompressor(ResourceType.CSS);
     @Override
     public boolean serveStatic(VirtualFile file, Request request, Response response) {
         String fn = file.getName();
@@ -194,16 +191,18 @@ public class GreenScriptPlugin extends PlayPlugin {
         if (Play.mode == Mode.PROD) {
             resp.cacheFor("1h");
         }
-        ICompressor comp = type == ResourceType.JS ? jsC_ : cssC_;
+        //ICompressor comp = type == ResourceType.JS ? jsC_ : cssC_;
+        IMinimizer min = type == ResourceType.CSS ? cssM_ : jsM_;
         try {
-            StringWriter w = new StringWriter();
-            comp.compress(new InputStreamReader(file.inputstream()), w);
+            //StringWriter w = new StringWriter();
+            //comp.compress(new InputStreamReader(file.inputstream()), w);
+            String content = min.processStatic(file.getRealFile());
             resp.contentType = type == ResourceType.JS ? "text/javascript" : "text/css";
             resp.status = 200;
-            resp.print(w);
+            resp.print(content);
             return true;
         } catch (Exception e) {
-            Logger.warn(e, "error compress file %1$s", file.getName());
+            Logger.error(e, "error compress file %1$s", file.getName());
             return false;
         }
     }
