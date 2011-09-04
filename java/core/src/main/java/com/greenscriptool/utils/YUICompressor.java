@@ -1,8 +1,5 @@
 package com.greenscriptool.utils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -33,17 +30,14 @@ public class YUICompressor implements ICompressor {
     }
 
     @Override
-    public void compress(File input, Writer output) throws Exception {
-        if (null == input || null == output) throw new NullPointerException();
-        if (logger_.isTraceEnabled()) logger_.trace(String.format("compressing %1$s ...", input.getName()));
-        Reader r = new BufferedReader(new FileReader(input));
+    public void compress(Reader r, Writer w) throws Exception {
         try {
             switch (type_) {
             case CSS:
-                new CssCompressor(r).compress(output, -1);
+                new CssCompressor(r).compress(w, -1);
                 break;
             case JS:
-                new JavaScriptCompressor(r, er_).compress(output, -1, true, false, false, false);
+                new JavaScriptCompressor(r, er_).compress(w, -1, true, false, false, false);
                 break;
             default:
                 throw new RuntimeException("Resource type not recognized: " + type_.name());
@@ -53,7 +47,7 @@ public class YUICompressor implements ICompressor {
                 try {
                     r.close();
                 } catch (IOException e) {
-                    logger_.warn("error closing file: " + input.getName(), e);
+                    logger_.warn("error closing file: ", e);
                 }
             }
         }

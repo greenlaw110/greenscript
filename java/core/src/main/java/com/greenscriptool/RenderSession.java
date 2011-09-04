@@ -139,7 +139,7 @@ public class RenderSession implements IRenderSession {
             all.append(sb);
             sb.delete(0, sb.length());
         }
-        return all.toString();
+        return m_.processInline(all.toString());
     }
     
     public boolean isDefault(String s) {

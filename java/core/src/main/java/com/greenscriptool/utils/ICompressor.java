@@ -1,6 +1,6 @@
 package com.greenscriptool.utils;
 
-import java.io.File;
+import java.io.Reader;
 import java.io.Writer;
 
 /**
@@ -14,16 +14,16 @@ public interface ICompressor {
     /**
      * Read input, do compressing, and write to output.
      * 
-     * <code>ICompressor</code> is responsible for open input file, read 
-     * and process it and close the file after process finished. On the
+     * <code>ICompressor</code> is responsible for open a reader, read 
+     * and process it and close the reader after process finished. On the
      * other side, compressor does not "open" a output, neither does it
      * close it. This design enable the system to merge multiple resources
      * into one resource and compress them at the same time
      * 
-     * @param input Input file
-     * @param output where the compressed result write to
+     * @param r where the compressor read from
+     * @param w where the compressed result write to
      * 
      * @throws Exception when error encountered during compressing process
      */
-    void compress(File input, Writer output) throws Exception;
+    void compress(Reader r, Writer w) throws Exception;
 }

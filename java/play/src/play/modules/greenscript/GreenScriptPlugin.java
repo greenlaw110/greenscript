@@ -2,6 +2,7 @@ package play.modules.greenscript;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -19,9 +20,9 @@ import play.Play.Mode;
 import play.PlayPlugin;
 import play.cache.Cache;
 import play.exceptions.UnexpectedException;
-import play.mvc.Router;
 import play.mvc.Http.Request;
 import play.mvc.Http.Response;
+import play.mvc.Router;
 import play.vfs.VirtualFile;
 
 import com.greenscriptool.DependenceManager;
@@ -40,6 +41,8 @@ import com.greenscriptool.utils.YUICompressor;
  * Define a Playframework plugin
  * 
  * @author greenlaw110@gmail.com
+ * @version 1.2.6, 2011-09-04
+ *          support LESS, fix bug: https://github.com/greenlaw110/greenscript/issues/18
  * @version 1.2.5, 2011-08-07
  *          support in-memory cache
  * @version 1.2.1, 2011-01-20 
@@ -49,7 +52,7 @@ import com.greenscriptool.utils.YUICompressor;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.5";
+    public static final String VERSION = "1.2.6";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -91,6 +94,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         defProps_.setProperty("greenscript.compress", "true");
         defProps_.setProperty("greenscript.cache", "true");
         defProps_.setProperty("greenscript.cache.inmemory", "false");
+        defProps_.setProperty("greenscript.less.enabled", "false");
     }
     
     public GreenScriptPlugin() {
@@ -192,7 +196,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         ICompressor comp = type == ResourceType.JS ? jsC_ : cssC_;
         try {
             StringWriter w = new StringWriter();
-            comp.compress(file.getRealFile(), w);
+            comp.compress(new InputStreamReader(file.inputstream()), w);
             resp.contentType = type == ResourceType.JS ? "text/javascript" : "text/css";
             resp.status = 200;
             resp.print(w);
@@ -281,6 +285,10 @@ public class GreenScriptPlugin extends PlayPlugin {
         
         if (p.containsKey("greenscript.useGoogleClosure")) {
             System.setProperty("greenscript.useGoogleClosure", p.getProperty("greenscript.useGoogleClosure"));
+        }
+        
+        if (p.containsKey("greenscript.less.enabled")) {
+        	System.setProperty("greenscript.less.enabled", p.getProperty("greenscript.less.enabled"));
         }
         
         info_("minimizer initialized");

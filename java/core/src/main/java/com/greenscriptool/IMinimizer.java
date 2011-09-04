@@ -221,6 +221,15 @@ public interface IMinimizer extends IProcessor {
     List<String> processWithoutMinimize(List<String> resourceNames);
     
     /**
+     * <p>process inline text
+     * 
+     * @param text
+     * @return
+     * @since 1.2.6
+     */
+    String processInline(String text);
+    
+    /**
      * Set file locator
      * @param fileLocator
      */

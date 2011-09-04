@@ -9,7 +9,7 @@
     <artifactId>greenscript-core</artifactId>
     <packaging>jar</packaging>
     <name>GreenScript Core</name>
-    <version>1.2.5</version>
+    <version>1.2.6</version>
     <description>A Java package to manage and process Web Resources (Javascript/CSS)</description>
     <url>http://github.com/greenlaw110/greenscript</url>
     

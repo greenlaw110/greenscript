@@ -21,6 +21,7 @@ public class MinimizerTest extends BaseTest {
     protected String jsUrlPath = "/js";
     protected String cssUrlPath = "/css";
     protected String cacheUrlPath = "/gs";
+    protected String cssUrlRoot = "/public";
     
     protected List<String> l = null; // temporarily holding processing result
     
@@ -29,7 +30,7 @@ public class MinimizerTest extends BaseTest {
         rootDir = rootDir();
         cssDir = new File(rootDir, "stylesheets");
         jsDir = new File(rootDir, "javascripts");
-        cacheDir = new File(rootDir, "gsCache");
+        cacheDir = new File(rootDir, "gs");
         
         //echo (new File(rootDir).getAbsolutePath());
         jm = new Minimizer(ResourceType.JS);
@@ -46,6 +47,7 @@ public class MinimizerTest extends BaseTest {
         cm.setCacheDir(cacheDir);
         cm.setResourceUrlPath(cssUrlPath);
         cm.setCacheUrlPath(cacheUrlPath);
+        cm.setResourceUrlRoot(cssUrlRoot);
         
         jm.enableDisableMinimize(false);
         cm.enableDisableMinimize(false);
@@ -74,8 +76,8 @@ public class MinimizerTest extends BaseTest {
         // with cdn
         v_("/js/a.js,http://abc.com/a.js,/js/b.js", "a,http://abc.com/a.js,b.js", jm);
         
-        // normal css case
-        v_("/css/b.css,/f1/c.css,/css/a.css", "b,/f1/c.css,a", cm);
+        // normal css case - css now always minizied
+        // v_("/css/b.css,/f1/c.css,/css/a.css", "b,/f1/c.css,a", cm);
         
         // _bundle convention
         v_("/js/a.js", "a,abc.bundle", jm);
@@ -87,7 +89,7 @@ public class MinimizerTest extends BaseTest {
         
         // bad resource
         // verifyResource is deprecated cm.enableDisableVerifyResource(true);
-        v_("/css/a.css,/f1/c.css", "a,faked,/f1/c", cm);
+        // v_("/css/a.css,/f1/c.css", "a,faked,/f1/c", cm);
         
     }
     
@@ -123,6 +125,11 @@ public class MinimizerTest extends BaseTest {
         
         // bad file shall not cause exception
         p_("a,b,faked", jm);
+    }
+    
+    @Test
+    public void testLessEngine() {
+        
     }
     
     private void v_(String expected, String names, IMinimizer m) {

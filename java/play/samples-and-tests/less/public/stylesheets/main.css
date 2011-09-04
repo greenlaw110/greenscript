@@ -1,0 +1,7 @@
+@import "lib/color.css";
+@import "lib/image.css";
+
+body {
+  background-image: @bg-img;
+  background-repeat: no-repeat;
+}
