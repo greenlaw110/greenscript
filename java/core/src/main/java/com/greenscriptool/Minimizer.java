@@ -38,6 +38,7 @@ public class Minimizer implements IMinimizer {
     private boolean compress_;
     private boolean useCache_;
     private boolean inMemory_;
+    private boolean processInline_;
 
     private FileCache cache_;
     private String resourceDir_;
@@ -96,6 +97,14 @@ public class Minimizer implements IMinimizer {
             logger_.debug("in memory cache "
                     + (enable ? "enabled" : "disabled"));
         clearCache();
+    }
+    
+    @Override
+    public void enableDisableProcessInline(boolean enable) {
+        processInline_ = enable;
+        if (logger_.isDebugEnabled())
+            logger_.debug("inline processing "
+                    + (enable ? "enabled" : "disabled"));
     }
 
     @Deprecated
@@ -294,6 +303,7 @@ public class Minimizer implements IMinimizer {
 
     @Override
     public String processInline(String text) {
+        if (!processInline_) return text;
         try {
             if (lessEnabled_()) {
                 text = less_.compile(text);

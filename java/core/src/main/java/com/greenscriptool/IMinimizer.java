@@ -95,6 +95,17 @@ public interface IMinimizer extends IProcessor {
     void enableDisableInMemoryCache(boolean inMemory);
     
     /**
+     * <p>Enable or disable process inline code</p>
+     * 
+     * <p>If this configuration is turned on then further process of inline
+     * code will be conducted, including: 1. use Less engine to compile
+     * css code, 2. use compressor to compress js and css code.</p>
+     * 
+     * @param b
+     */
+    void enableDisableProcessInline(boolean b);
+    
+    /**
      * Return <code>minimize</code> setting
      * 
      * @return true if <code>minimize</code> is enabled, false otherwise

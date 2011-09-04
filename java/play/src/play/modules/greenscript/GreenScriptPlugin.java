@@ -95,6 +95,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         defProps_.setProperty("greenscript.cache", "true");
         defProps_.setProperty("greenscript.cache.inmemory", "false");
         defProps_.setProperty("greenscript.less.enabled", "false");
+        defProps_.setProperty("greenscript.inline.process", "false");
     }
     
     public GreenScriptPlugin() {
@@ -383,11 +384,13 @@ public class GreenScriptPlugin extends PlayPlugin {
         boolean compress = getBooleanProp_(p, "greenscript.compress", true);
         boolean cache = getBooleanProp_(p, "greenscript.cache", true);
         inMemoryCache = getBooleanProp_(p, "greenscript.cache.inmemory", false);
+        boolean processInline = getBooleanProp_(p, "greenscript.inline.process", false);
         
         m.enableDisableMinimize(minimize);
         m.enableDisableCompress(compress);
         m.enableDisableCache(cache);
         m.enableDisableInMemoryCache(inMemoryCache);
+        m.enableDisableProcessInline(processInline);
         m.setFileLocator(new IFileLocator(){
             @Override
             public File locate(String path) {
@@ -423,7 +426,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         }
     };
     
-    private String fetchProp_(Properties p, String key) {
+    private static String fetchProp_(Properties p, String key) {
         String val = p.getProperty(key);
         if (null == val) val = defProps_.getProperty(key);
         return val;
@@ -506,10 +509,37 @@ public class GreenScriptPlugin extends PlayPlugin {
         gs.loadDependencies();
         info_("dependency reloaded");
     }
+    
+    public static String lessImport(String fns) {
+        GreenScriptPlugin gs = getInstance();
+        Properties p = gs.minConf_;
+        String rootDir = fetchProp_(p, "greenscript.dir.root");
+        String resourceDir = fetchProp_(p, "greenscript.dir.css");
+        StringBuilder sb = new StringBuilder();
+        String[] sa = fns.split("[ ,;]");
+        for (String fn: sa) {
+            fn = fn.endsWith(".css") ? fn : fn + ".css";
+            String path;
+            if (fn.startsWith("/")) {
+                path = (!fn.startsWith(rootDir)) ? rootDir
+                        + fn.replaceFirst("/", "") : fn;
+            } else {
+                path = rootDir + File.separator + resourceDir + File.separator
+                        + fn;
+            }
+            VirtualFile vf = VirtualFile.search(Play.roots, path);
+            if (null != vf) {
+                sb.append(vf.contentAsString());
+            }
+        }
+        return sb.toString();
+    }
 }
 /*
  * History
  * -----------------------------------------------------------
+ * 1.2.6
+ *  - support LESS
  * 1.2.5:
  *  - support in memory cache
  * 1.2.3:

@@ -199,6 +199,13 @@ greenscript.cache.inmemory=true
 #   using LESS CSS engine before processing it. By default this option
 #   is turned off
 greenscript.less.enabled=false
+#
+# Enable/Disable inline script processing
+#   Once this configuration is turned on, GreenScript will try to process inline code
+#   before output them. Here "process" means use less engine to compile the css code and
+#   use compressor to compress both css and js code. By default the configuration is
+#   turned off
+greenscript.inline.process=false
 
 h3. <a>Configure javascript/css dependencies</a>
 
@@ -307,6 +314,20 @@ bc. #{greenscript.js output:true}
         new Control.DatePicker(el, {icon: '/public/images/calendar.png', locale: 'en_iso8601'});
     });
 #{/greenscript.js}
+
+h5. <a>Inline css code with LESS support</a>
+
+p. Start from v1.2.6 GreenScript Play module support LESS syntax in inline css code.
+
+bc. #{greenscript.css}
+#{greenscript.@lessImport 'lib/color' /}
+#body {
+  color: @fgColor;
+  background-color: @bgColor;
+}
+#{/greenscript.css}
+
+p. Note, this feature should be used with cautious. By embedding less code in view you will have less engine to compile the view each time. While force less code sit inside static css file only you just need to invoke less engine for one time and the rest requests will fetch the compiled version from cache. This is why we have "greenscript.inline.process" configuration defined.
 
 h4. <a>Inline Dependency Declaration</a>
 
