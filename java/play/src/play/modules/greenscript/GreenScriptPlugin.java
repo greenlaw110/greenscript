@@ -58,7 +58,7 @@ import com.greenscriptool.utils.IBufferLocator;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.6";
+    public static final String VERSION = "1.2.6c";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -185,6 +185,10 @@ public class GreenScriptPlugin extends PlayPlugin {
     //private static YUICompressor cssC_ = new YUICompressor(ResourceType.CSS);
     @Override
     public boolean serveStatic(VirtualFile file, Request request, Response response) {
+        if (null == jsM_) {
+            if (Play.mode == Mode.DEV) Play.start();
+            else throw new UnexpectedException("Minimizer not initialized");
+        }
         String fn = file.getName();
         if (jsM_.isMinimizeEnabled() && fn.endsWith(".js")) {
             return processStatic_(file, request, response, ResourceType.JS);

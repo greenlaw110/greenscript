@@ -1,4 +1,4 @@
-self: play -> greenscript 1.2.6b
+self: play -> greenscript 1.2.6c
 
 require:
     - play -> secure

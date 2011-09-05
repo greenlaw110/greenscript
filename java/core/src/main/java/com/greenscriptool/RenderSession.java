@@ -65,8 +65,14 @@ public class RenderSession implements IRenderSession {
         type_ = type;
     }
     
+    private final void trace(String s, Object... args) {
+//        s = String.format(s, args);
+//        logger_.info(s);
+    }
+    
     @Override
     public void declareInline(String inline, int priority) {
+        trace(">>declareInline");
         priority = -1 * priority;
         StringBuffer sb = inlines_.get(priority);
         if (null == sb) {
@@ -74,10 +80,12 @@ public class RenderSession implements IRenderSession {
             inlines_.put(priority, sb);
         }
         sb.append("\n").append(inline);
+        trace("<<declareInline");
     }
 
     @Override
     public void declare(String nameList, String media, String browser) {
+        trace(">>declare");
     	d_.processInlineDependency(nameList);
         String[] sa = nameList.split(SEPARATOR);
         media = canonical_(media);
@@ -85,19 +93,23 @@ public class RenderSession implements IRenderSession {
         for (String name: sa) {
             declared_.add(new Resource(name, media, browser));
         }
+        trace("<<declareInline");
     }
 
     @Override
     public void declare(List<String> nameList, String media, String browser) {
+        trace(">>declare2");
         media = canonical_(media);
         browser = canonical_(browser);
         for (String name: nameList) {
             declared_.add(new Resource(name, media, browser));
         }
+        trace("<<declareInline");
     }
 
     @Override
     public List<String> output(String nameList, boolean withDependencies, boolean all, String media, String browser) {
+        trace(">>output - ", nameList);
         if (null != nameList) declare(nameList, null, null);
         
         List<String> l = null;
@@ -115,30 +127,41 @@ public class RenderSession implements IRenderSession {
             l = Collections.emptyList();
         }
         
-        if (l.isEmpty()) return l;
+        if (l.isEmpty()) {
+            trace("<<output");
+            return l;
+        }
         
         if (m_.isMinimizeEnabled()) {
+            trace(">>output: 1");
             l = m_.processWithoutMinimize(l);
             l.removeAll(loaded_);
             loaded_.addAll(l);
+            trace(l.toString());
             l = m_.process(l);
+            trace(">>output: 3");
         } else {
+            trace(">>output: 4");
             l = m_.process(l);
             l.removeAll(loaded_);
             loaded_.addAll(l);
+            trace(">>output: 5");
         }
 
         if (logger_.isTraceEnabled()) logger_.trace("output items: " + l);
+        trace("<<output");
         return l;
     }
     
     @Override
     public String outputInline() {
+        trace(">>outputInline");
         StringBuilder all = new StringBuilder();
         for (StringBuffer sb: inlines_.values()) {
             all.append(sb);
             sb.delete(0, sb.length());
         }
+        trace("<<outputInline");
         return m_.processInline(all.toString());
     }
     

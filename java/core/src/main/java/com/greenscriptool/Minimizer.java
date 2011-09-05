@@ -311,7 +311,8 @@ public class Minimizer implements IMinimizer {
             return content;
         try {
             if (lessEnabled_()) {
-                content = less_.compile(content);
+                //content = content.replaceAll("[\r\n]", " ");
+                content = less_.compile(content).replace("\\n", "\n");
             }
             if (this.compress_) {
                 Reader r = new StringReader(content);
@@ -331,7 +332,7 @@ public class Minimizer implements IMinimizer {
         String content;
         try {
             if (lessEnabled_()) {
-                content = less_.compile(file);
+                content = less_.compile(file).replace("\\n", "\n");
             } else {
                 content = fileToString_(file);
             }
@@ -431,9 +432,7 @@ public class Minimizer implements IMinimizer {
      * 
      * @param fn the original file name
      */
-    private static final Pattern P_URL = Pattern.compile(
-            "url\\('?([^/].*)'?\\)", Pattern.CASE_INSENSITIVE
-                    | Pattern.CANON_EQ | Pattern.UNICODE_CASE);
+    private static final Pattern P_URL = Pattern.compile("url\\(['\"]?((?!data:)[^/'\"][^'\"]*)['\"]?\\)", Pattern.CASE_INSENSITIVE | Pattern.CANON_EQ | Pattern.UNICODE_CASE);
 
     private String processRelativeUrl_(String s, String fn) throws IOException {
         if (ResourceType.CSS != type_)
@@ -443,17 +442,23 @@ public class Minimizer implements IMinimizer {
          * Process fn: .../a.* -> .../
          */
         int p = fn.lastIndexOf("/") + 1;
-        fn = fn.substring(0, p);
+        fn = 0 == p ? resourceUrlPath_ : fn.substring(0, p);
 
         String prefix;
         if (fn.startsWith("/")) {
-            prefix = fn.startsWith(resourceUrlRoot_) ? resourceUrlRoot_
-                    + fn.replaceFirst("/", "") : fn;
+            prefix = fn.startsWith(resourceUrlRoot_) ? fn : resourceUrlRoot_ + fn.replaceFirst("/", "");
         } else {
             prefix = resourceUrlPath_ + fn;
         }
-        Matcher m = P_URL.matcher(s);
-        return m.replaceAll("url(" + prefix + "$1)");
+        try {
+            Matcher m = P_URL.matcher(s);
+            String retVal = m.replaceAll("url(" + prefix + "$1)");
+            return retVal;
+        } catch (Throwable e) {
+            System.err.println("Error process relative URL: " + fn);
+            e.printStackTrace(System.err);
+            return s;
+        }
     }
 
     private String processRelativeUrl_(File f, String originalFn)
@@ -489,7 +494,7 @@ public class Minimizer implements IMinimizer {
                     Reader r = null;
                     // do less compile for css
                     if (lessEnabled_()) {
-                        String s = less_.compile(file);
+                        String s = less_.compile(file).replace("\\n", "\n");
                         s = processRelativeUrl_(s, originalFn);
                         r = new StringReader(s);
                     } else {

@@ -1,12 +1,12 @@
 @COLOR: #CCC;
 .c {
     color: @COLOR;
-    background: url(c.gif);
+    background: url("c.gif");
 }
 .d {
-    background: url(/a/d.png);
+    background: url('/a/d.png');
 }
 .e {
-    background: url(/public/e.gif);
+    background: url("/public/e.gif");
 	
 }

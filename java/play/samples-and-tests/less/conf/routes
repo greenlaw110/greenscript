@@ -4,6 +4,7 @@
 
 # Home page
 GET     /                                       Application.index
+GET /s Application.processStatic
 
 # Ignore favicon requests
 GET     /favicon.ico                            404
