@@ -5,9 +5,7 @@
         <title>#{get 'title' /}</title>
         <meta charset="${_response_encoding}">
         #{greenscript.css 'main', output: 'all'/}
-        <link rel="shortcut icon" type="image/png" href="@{'/public/images/favicon.png'}">
-        <script src="@{'/public/javascripts/jquery-1.5.2.min.js'}" type="text/javascript" charset="${_response_encoding}"></script>
-        #{get 'moreScripts' /}
+        #{greenscript.js 'jquery-1.6.2', output: 'all'/}
     </head>
     <body>
         #{doLayout /}

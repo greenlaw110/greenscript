@@ -3,11 +3,11 @@ h1. GreenScript module
 The GreenScript module help you to manage javascript and CSS dependencies and do minimizing work in the same time.
 <script type="text/javascript" src="http://www.ohloh.net/p/485839/widgets/project_users_logo.js"></script>
 
-h2. <a>What's New for v1.2.6a</a>
+h2. <a>What's New for v1.2.6b</a>
 
 * Support LESS process for static service
-** In other words, now you can get LESS compilation even you are using static css reference in your view like <link type="text/css" href="/public/stylesheets/myLessCss.css">. This feature could benefit those people who are using Japid or new Scala template system where
-GreenScript tags are not available yet
+** In other words, now you can get LESS compilation even you are using static css reference in your view like <link type="text/css" href="/public/stylesheets/myLessCss.css">. This feature could benefit those people who are using Japid or new Scala template system where GreenScript tags are not available yet
+* Support Last-Modified and E-Tag and your browser now retrieve files only once
 
 h2. <a>What's New for v1.2.6</a>
 
@@ -335,7 +335,7 @@ h5. <a>Inline css code with LESS support</a>
 p. Start from v1.2.6 GreenScript Play module support LESS syntax in inline css code.
 
 bc. #{greenscript.css}
-#{greenscript.@lessImport 'lib/color' /}
+#{greenscript.@import 'lib/color' /}
 #body {
   color: @fgColor;
   background-color: @bgColor;

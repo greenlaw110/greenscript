@@ -5,12 +5,18 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 
 import play.Logger;
 import play.Play;
@@ -18,9 +24,12 @@ import play.Play.Mode;
 import play.PlayPlugin;
 import play.cache.Cache;
 import play.exceptions.UnexpectedException;
+import play.libs.IO;
+import play.mvc.Http;
 import play.mvc.Http.Request;
 import play.mvc.Http.Response;
 import play.mvc.Router;
+import play.utils.Utils;
 import play.vfs.VirtualFile;
 
 import com.greenscriptool.DependenceManager;
@@ -74,6 +83,8 @@ public class GreenScriptPlugin extends PlayPlugin {
     
     private HashMap<String, Long> configFiles_;
     
+    private boolean eTag_ = false;
+    
     private static Properties defProps_; static {
         defProps_ = new Properties();
         // file paths
@@ -106,6 +117,8 @@ public class GreenScriptPlugin extends PlayPlugin {
         
         loadDependencies();
         InitializeMinimizers();
+        
+        eTag_ = Play.configuration.getProperty("http.useETag", "true").equalsIgnoreCase("true");
         
         info_("initialized");
     }
@@ -174,36 +187,88 @@ public class GreenScriptPlugin extends PlayPlugin {
     public boolean serveStatic(VirtualFile file, Request request, Response response) {
         String fn = file.getName();
         if (jsM_.isMinimizeEnabled() && fn.endsWith(".js")) {
-            return compressStatic_(file, response, ResourceType.JS);
+            return processStatic_(file, request, response, ResourceType.JS);
         }
-        if (cssM_.isMinimizeEnabled() && fn.endsWith("css")) {
-            return compressStatic_(file, response, ResourceType.CSS);
+        if (cssM_.isMinimizeEnabled() && (fn.endsWith("css") || fn.endsWith("less"))) {
+            return processStatic_(file, request, response, ResourceType.CSS);
         }
         
         return super.serveStatic(file, request, response);
     }
     
-    private boolean compressStatic_(VirtualFile file, Response resp, ResourceType type) {
+    private static final Pattern P_IMPORT = Pattern.compile(".*@import\\s*\"(.*?)\".*"); 
+    private Set<File> imports_(File file) {
+        String key = "less_imports_" + file.getPath() + file.lastModified();
+        
+        @SuppressWarnings("unchecked")
+        Set<File> files = Cache.get(key, Set.class);
+        if (null == files) {
+            files = new HashSet<File>();
+            try {
+                List<String> lines = IO.readLines(file);
+                for (String line: lines) {
+                    Matcher m = P_IMPORT.matcher(line);
+                    while (m.find()) {
+                        File f = new File(file.getParentFile(), m.group(1));
+                        files.add(f);
+                        files.addAll(imports_(f));
+                    }
+                }
+            } catch (Exception e) {
+                Logger.error(e, "Error occurred getting @imports from resource: $s", file);
+            }
+        }
+        return files;
+    }
+    
+    private long lastModified_(VirtualFile file, ResourceType type) {
+        long l = file.lastModified();
+        if (ResourceType.CSS == type) {
+            // try to get last modified of all @imported files
+            for (File f: imports_(file.getRealFile())) {
+                l = Math.max(l, f.lastModified());
+            }
+        }
+        return l;
+    }
+    
+    private boolean processStatic_(VirtualFile file, Request req, Response resp, ResourceType type) {
         IRenderSession sess = type == ResourceType.JS ? jsSession() : cssSession();
         if (null != sess && sess.hasDeclared()) {
+            // do not service static if requesting to minimized files
             return false;
         }
         if (Play.mode == Mode.PROD) {
             resp.cacheFor("1h");
         }
-        //ICompressor comp = type == ResourceType.JS ? jsC_ : cssC_;
-        IMinimizer min = type == ResourceType.CSS ? cssM_ : jsM_;
-        try {
-            //StringWriter w = new StringWriter();
-            //comp.compress(new InputStreamReader(file.inputstream()), w);
-            String content = min.processStatic(file.getRealFile());
-            resp.contentType = type == ResourceType.JS ? "text/javascript" : "text/css";
-            resp.status = 200;
-            resp.print(content);
-            return true;
-        } catch (Exception e) {
-            Logger.error(e, "error compress file %1$s", file.getName());
-            return false;
+        long l = lastModified_(file, type);
+        final String etag = "\"" + l + "-" + file.hashCode() + "\"";
+        if (!req.isModified(etag, l)) {
+            if (req.method.equalsIgnoreCase("GET")) {
+                resp.status = Http.StatusCode.NOT_MODIFIED;
+                if (eTag_) {
+                    resp.setHeader(Names.ETAG, etag);
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            IMinimizer min = type == ResourceType.CSS ? cssM_ : jsM_;
+            try {
+                String content = min.processStatic(file.getRealFile());
+                resp.contentType = type == ResourceType.JS ? "text/javascript" : "text/css";
+                resp.status = 200;
+                resp.print(content);
+                resp.setHeader(Names.LAST_MODIFIED, Utils.getHttpDateFormatter().format(new Date(l + 1000)));
+                if (eTag_) {
+                    resp.setHeader(Names.ETAG, etag);
+                }
+                return true;
+            } catch (Exception e) {
+                Logger.error(e, "error compress file %1$s", file.getName());
+                return false;
+            }
         }
     }
 

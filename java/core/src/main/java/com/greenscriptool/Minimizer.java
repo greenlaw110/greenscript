@@ -98,7 +98,7 @@ public class Minimizer implements IMinimizer {
                     + (enable ? "enabled" : "disabled"));
         clearCache();
     }
-    
+
     @Override
     public void enableDisableProcessInline(boolean enable) {
         processInline_ = enable;
@@ -140,8 +140,11 @@ public class Minimizer implements IMinimizer {
     public void setRootDir(String dir) {
         // if (!dir.isDirectory()) throw new
         // IllegalArgumentException("not a directory");
+//        if (!(dir.startsWith("/") || dir.startsWith(File.separator))) {
+//            throw new IllegalArgumentException("root dir shall be start with /");
+//        }
         checkInitialize_(false);
-        rootDir_ = dir.endsWith(File.separator) ? dir : dir + File.separator;
+        rootDir_ = dir.replaceFirst("[/\\\\]$", "");
         if (logger_.isDebugEnabled())
             logger_.debug(String.format("root dir set to %1$s", dir));
     }
@@ -304,7 +307,8 @@ public class Minimizer implements IMinimizer {
 
     @Override
     public String processInline(String content) {
-        if (!processInline_) return content;
+        if (!processInline_)
+            return content;
         try {
             if (lessEnabled_()) {
                 content = less_.compile(content);
@@ -321,7 +325,7 @@ public class Minimizer implements IMinimizer {
             throw new RuntimeException(e);
         }
     }
-    
+
     @Override
     public String processStatic(File file) {
         String content;
@@ -518,11 +522,10 @@ public class Minimizer implements IMinimizer {
         fn = fn.endsWith(ext) ? fn : fn + ext;
         String path;
         if (fn.startsWith("/")) {
-            path = (!fn.startsWith(rootDir_)) ? rootDir_
+            path = (!fn.startsWith(rootDir_)) ? rootDir_ + "/"
                     + fn.replaceFirst("/", "") : fn;
         } else {
-            path = rootDir_ + File.separator + resourceDir_ + File.separator
-                    + fn;
+            path = rootDir_ + "/" + resourceDir_ + "/" + fn;
         }
         File f = fl_.locate(path);
         // System.out.println(">>>" + f.getAbsolutePath());
