@@ -184,9 +184,24 @@ public interface IMinimizer extends IProcessor {
     void setCacheUrlPath(String urlPath);
     
     /**
+     * <p>Call this method to check the cached file last-modified timestamp.
+     * if the timestamp is newer then the cached content will be cleared 
+     */
+    void checkCache();
+    
+    /**
      * A management interface to notify miminizer to clear cached processed resources. 
      */
     void clearCache();
+    
+    /**
+     * Get last-modified timestamp of the resource specified and all imported resources
+     * if there is
+     * 
+     * @param resource
+     * @return
+     */
+    long getLastModified(File resource);
     
     /**
      * <p>process a given list of file names and return urls point to the processed resources</p>

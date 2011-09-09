@@ -11,7 +11,11 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
@@ -218,9 +222,64 @@ public class Minimizer implements IMinimizer {
             throw new NullPointerException();
         bl_ = bufferLocator;
     }
-
+    
+    private static final Pattern P_IMPORT = Pattern.compile(".*@import\\s*\"(.*?)\".*"); 
+    private Map<String, Set<File>> importsCache_ = new HashMap<String, Set<File>>();
+    private Set<File> imports_(File file) {
+        String key = "less_imports_" + file.getPath() + file.lastModified();
+        
+        Set<File> files = importsCache_.get(key);
+        if (null == files) {
+            files = new HashSet<File>();
+            try {
+                List<String> lines = fileToLines_(file);
+                for (String line: lines) {
+                    Matcher m = P_IMPORT.matcher(line);
+                    while (m.find()) {
+                        File f = new File(file.getParentFile(), m.group(1));
+                        files.add(f);
+                        files.addAll(imports_(f));
+                    }
+                }
+            } catch (Exception e) {
+                if (logger_.isErrorEnabled())
+                    logger_.error(String.format("Error occurred getting @imports from resource: $s", file), e);
+            }
+        }
+        return files;
+    }
+    
+    @Override
+    public long getLastModified(File file) {
+        long l = file.lastModified();
+        if (ResourceType.CSS == type_) {
+            // try to get last modified of all @imported files
+            for (File f: imports_(file)) {
+                l = Math.max(l, f.lastModified());
+            }
+        }
+        return l;
+    }
+    
+    @Override
+    public void checkCache() {
+        for(List<String> l: processCache_.keySet()) {
+            for (String s: l) {
+                if (isCDN_(s)) continue;
+                File f = getFile_(s);
+                if (null != f && f.exists()) {
+                    long ts1 = getLastModified(f);
+                    long ts2 = lastModifiedCache_.get(f);
+                    if (ts1 > ts2) {
+                        processCache_.remove(l);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
     private ConcurrentMap<List<String>, List<String>> processCache_ = new ConcurrentHashMap<List<String>, List<String>>();
-    private ConcurrentMap<List<String>, List<String>> processCache2_ = new ConcurrentHashMap<List<String>, List<String>>();
 
     /**
      * A convention used by this minimizer is resource name suffix with
@@ -234,14 +293,15 @@ public class Minimizer implements IMinimizer {
         if (minimize_ || ResourceType.CSS == type_) {
             if (useCache_ && processCache_.containsKey(resourceNames)) {
                 // !!! cache of the return list instead of minimized file
-                return processCache_.get(resourceNames);
+                List<String> l = processCache_.get(resourceNames);
+                if (null != l) return l;
             }
             // CDN items will break the resource name list into
             // separate chunks in order to keep the dependency order
             List<String> retLst = new ArrayList<String>();
             List<String> tmpLst = new ArrayList<String>();
             for (String fn : resourceNames) {
-                if (!fn.startsWith("http")) {
+                if (!isCDN_(fn)) {
                     tmpLst.add(fn);
                 } else {
                     if (tmpLst.size() > 0) {
@@ -264,7 +324,13 @@ public class Minimizer implements IMinimizer {
             return retLst;
         }
     }
+    
+    private final String getExtension_(String path) {
+        int pos = path.lastIndexOf(".");
+        return -1 == pos ? "" : path.substring(pos, path.length());
+    }
 
+    private ConcurrentMap<List<String>, List<String>> processCache2_ = new ConcurrentHashMap<List<String>, List<String>>();
     @Override
     public List<String> processWithoutMinimize(List<String> resourceNames) {
         checkInitialize_(true);
@@ -272,25 +338,27 @@ public class Minimizer implements IMinimizer {
             return Collections.emptyList();
         if (useCache_ && processCache2_.containsKey(resourceNames)) {
             // !!! cache of the return list instead of minimized file
-            return processCache2_.get(resourceNames);
+            List<String> l = processCache2_.get(resourceNames);
+            if (null != l) return l;
         }
         List<String> l = new ArrayList<String>();
         String urlPath = resourceUrlPath_;
         for (String fn : resourceNames) {
-            if (fn.startsWith("http"))
+            if (isCDN_(fn))
                 l.add(fn); // CDN resource
             else {
                 String s = fn.replace(type_.getExtension(), "");
+                File f = null;
                 if (s.equalsIgnoreCase("default")
                         || s.endsWith(IDependenceManager.BUNDLE_SUFFIX)) {
                     continue;
                 } else {
-                    File f = getFile_(fn);
+                    f = getFile_(fn);
                     if (null == f || !f.isFile()) {
                         continue;
                     }
                 }
-                String ext = type_.getExtension();
+                String ext = getExtension_(f.getName());
                 fn = fn.endsWith(ext) ? fn : fn + ext;
                 if (fn.startsWith("/")) {
                     if (!fn.startsWith(resourceUrlRoot_))
@@ -377,13 +445,10 @@ public class Minimizer implements IMinimizer {
             out = rsrc.getWriter();
             for (String s : resourceNames) {
                 // if (s.startsWith("http:")) l.add(s);
-                if (s.startsWith("http:"))
+                if (isCDN_(s))
                     throw new IllegalArgumentException(
                             "CDN resource not expected in miminize method");
                 else {
-                    if (s.startsWith(resourceUrlPath_)) {
-                        s = s.replaceFirst(resourceUrlPath_, "");
-                    }
                     File f = getFile_(s);
                     if (null != f && f.exists())
                         merge_(f, out, s);
@@ -479,11 +544,24 @@ public class Minimizer implements IMinimizer {
         r.close();
         return sb.toString();
     }
+    
+    private List<String> fileToLines_(File f) throws IOException {
+        BufferedReader r = new BufferedReader(new FileReader(f));
+        String l = null;
+        List<String> lines = new ArrayList<String>();
+        while ((l = r.readLine()) != null) {
+            lines.add(l);
+        }
+        r.close();
+        return lines;
+    }
 
+    private ConcurrentMap<File, Long> lastModifiedCache_ = new ConcurrentHashMap<File, Long>();
     private void merge_(File file, Writer out, String originalFn) {
         if (logger_.isTraceEnabled())
             logger_.trace("starting to minimize resource: " + file.getName());
 
+        lastModifiedCache_.put(file, getLastModified(file));
         // possibly due to error or pseudo resource name
         try {
             if (compress_) {
@@ -523,8 +601,10 @@ public class Minimizer implements IMinimizer {
     }
 
     private File getFile_(String resourceName) {
-        String fn = resourceName, ext = type_.getExtension();
-        fn = fn.endsWith(ext) ? fn : fn + ext;
+        if (resourceName.startsWith(resourceUrlPath_)) {
+            resourceName = resourceName.replaceFirst(resourceUrlPath_, "");
+        }
+        String fn = resourceName;
         String path;
         if (fn.startsWith("/")) {
             path = (!fn.startsWith(rootDir_)) ? rootDir_ + "/"
@@ -532,9 +612,12 @@ public class Minimizer implements IMinimizer {
         } else {
             path = rootDir_ + "/" + resourceDir_ + "/" + fn;
         }
-        File f = fl_.locate(path);
-        // System.out.println(">>>" + f.getAbsolutePath());
-        return f;
+        for (String ext: type_.getAllExtensions()) {
+            String p = fn.endsWith(ext) ? path : path + ext;
+            File f = fl_.locate(p);
+            if (null != f) return f;
+        }
+        return null;
     }
 
     private static void copy_(File file, Writer out) throws IOException {
@@ -580,6 +663,13 @@ public class Minimizer implements IMinimizer {
 
     public ResourceType getType() {
         return type_;
+    }
+    
+    private final static Pattern P_CDN_PREFIX = Pattern.compile("^https?:");
+    private final boolean isCDN_(String resourceName) {
+        if (null == resourceName) return false;
+        Matcher m = P_CDN_PREFIX.matcher(resourceName);
+        return m.find();
     }
 
 }

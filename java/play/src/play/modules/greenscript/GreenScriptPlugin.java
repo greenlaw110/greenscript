@@ -8,13 +8,11 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 
@@ -24,7 +22,9 @@ import play.Play.Mode;
 import play.PlayPlugin;
 import play.cache.Cache;
 import play.exceptions.UnexpectedException;
-import play.libs.IO;
+import play.jobs.Job;
+import play.jobs.JobsPlugin;
+import play.libs.Time;
 import play.mvc.Http;
 import play.mvc.Http.Request;
 import play.mvc.Http.Response;
@@ -58,7 +58,7 @@ import com.greenscriptool.utils.IBufferLocator;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.6c";
+    public static final String VERSION = "1.2.6d";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -104,6 +104,8 @@ public class GreenScriptPlugin extends PlayPlugin {
         defProps_.setProperty("greenscript.cache.inmemory", "false");
         defProps_.setProperty("greenscript.less.enabled", "false");
         defProps_.setProperty("greenscript.inline.process", "false");
+        defProps_.setProperty("greenscript.js.cache.check", "10s");
+        defProps_.setProperty("greenscript.css.cache.check", "10s");
     }
     
     public GreenScriptPlugin() {
@@ -139,6 +141,25 @@ public class GreenScriptPlugin extends PlayPlugin {
     @Override
     public void onApplicationStart() {
         updateRoute_();
+    }
+    
+    @Override
+    public void afterApplicationStart() {
+        Properties p = Play.configuration;
+        for (ResourceType type: ResourceType.values()) {
+            final Minimizer m = type == ResourceType.JS ? jsM_ : cssM_;
+            String s = fetchProp_(p, String.format("greenscript%s.cache.check", type.getExtension()));
+            int i = "never".equalsIgnoreCase(s) ? -1 : Time.parseDuration(s); 
+            if (-1 != i) {
+                Job<Object> j = new Job<Object>() {
+                    @Override
+                    public void doJob() {
+                        m.checkCache();
+                    }
+                };
+                JobsPlugin.executor.scheduleWithFixedDelay(j, i, i, TimeUnit.SECONDS);
+            }
+        }
     }
     
     @Override
@@ -200,41 +221,41 @@ public class GreenScriptPlugin extends PlayPlugin {
         return super.serveStatic(file, request, response);
     }
     
-    private static final Pattern P_IMPORT = Pattern.compile(".*@import\\s*\"(.*?)\".*"); 
-    private Set<File> imports_(File file) {
-        String key = "less_imports_" + file.getPath() + file.lastModified();
-        
-        @SuppressWarnings("unchecked")
-        Set<File> files = Cache.get(key, Set.class);
-        if (null == files) {
-            files = new HashSet<File>();
-            try {
-                List<String> lines = IO.readLines(file);
-                for (String line: lines) {
-                    Matcher m = P_IMPORT.matcher(line);
-                    while (m.find()) {
-                        File f = new File(file.getParentFile(), m.group(1));
-                        files.add(f);
-                        files.addAll(imports_(f));
-                    }
-                }
-            } catch (Exception e) {
-                Logger.error(e, "Error occurred getting @imports from resource: $s", file);
-            }
-        }
-        return files;
-    }
+//    private static final Pattern P_IMPORT = Pattern.compile(".*@import\\s*\"(.*?)\".*"); 
+//    private Set<File> imports_(File file) {
+//        String key = "less_imports_" + file.getPath() + file.lastModified();
+//        
+//        @SuppressWarnings("unchecked")
+//        Set<File> files = Cache.get(key, Set.class);
+//        if (null == files) {
+//            files = new HashSet<File>();
+//            try {
+//                List<String> lines = IO.readLines(file);
+//                for (String line: lines) {
+//                    Matcher m = P_IMPORT.matcher(line);
+//                    while (m.find()) {
+//                        File f = new File(file.getParentFile(), m.group(1));
+//                        files.add(f);
+//                        files.addAll(imports_(f));
+//                    }
+//                }
+//            } catch (Exception e) {
+//                Logger.error(e, "Error occurred getting @imports from resource: $s", file);
+//            }
+//        }
+//        return files;
+//    }
     
-    private long lastModified_(VirtualFile file, ResourceType type) {
-        long l = file.lastModified();
-        if (ResourceType.CSS == type) {
-            // try to get last modified of all @imported files
-            for (File f: imports_(file.getRealFile())) {
-                l = Math.max(l, f.lastModified());
-            }
-        }
-        return l;
-    }
+//    private long lastModified_(VirtualFile file, ResourceType type) {
+//        long l = file.lastModified();
+//        if (ResourceType.CSS == type) {
+//            // try to get last modified of all @imported files
+//            for (File f: imports_(file.getRealFile())) {
+//                l = Math.max(l, f.lastModified());
+//            }
+//        }
+//        return l;
+//    }
     
     private boolean processStatic_(VirtualFile file, Request req, Response resp, ResourceType type) {
         IRenderSession sess = type == ResourceType.JS ? jsSession() : cssSession();
@@ -245,7 +266,8 @@ public class GreenScriptPlugin extends PlayPlugin {
         if (Play.mode == Mode.PROD) {
             resp.cacheFor("1h");
         }
-        long l = lastModified_(file, type);
+        IMinimizer min = type == ResourceType.CSS ? cssM_ : jsM_;
+        long l = min.getLastModified(file.getRealFile());
         final String etag = "\"" + l + "-" + file.hashCode() + "\"";
         if (!req.isModified(etag, l)) {
             if (req.method.equalsIgnoreCase("GET")) {
@@ -258,7 +280,7 @@ public class GreenScriptPlugin extends PlayPlugin {
                 return false;
             }
         } else {
-            IMinimizer min = type == ResourceType.CSS ? cssM_ : jsM_;
+            
             try {
                 String content = min.processStatic(file.getRealFile());
                 resp.contentType = type == ResourceType.JS ? "text/javascript" : "text/css";
@@ -431,7 +453,7 @@ public class GreenScriptPlugin extends PlayPlugin {
     public static final String CACHE_KEY_BUFFER = "greenscript.buffer";
     protected boolean inMemoryCache = false;
     private Minimizer initializeMinimizer_(Properties p, ResourceType type) {
-        Minimizer m = new Minimizer(type);
+        final Minimizer m = new Minimizer(type);
         String ext = type.getExtension();
         String rootDir = fetchProp_(p, "greenscript.dir.root");
         String resourceDir = fetchProp_(p, "greenscript.dir" + ext);

@@ -16,5 +16,9 @@ public class Application extends Controller {
     public static void processStatic() {
         render();
     }
+    
+    public static void jobStatus() {
+        response.print(CorePlugin.computeApplicationStatus(request.path.contains(".json")));
+    }
 
 }

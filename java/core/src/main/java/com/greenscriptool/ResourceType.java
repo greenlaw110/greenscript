@@ -1,5 +1,8 @@
 package com.greenscriptool;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Resource type enumeration 
  * 
@@ -8,13 +11,16 @@ package com.greenscriptool;
  * @since 1.0
  */
 public enum ResourceType {
-    JS(".js"), CSS(".css");        
-    private ResourceType(String extension) {
-        if (null == extension) throw new NullPointerException("extension cannot be null");
-        ext_ = extension;
+    JS(".js"), CSS(".css", ".less");        
+    private ResourceType(String... extension) {
+        if (extension.length == 0) throw new IllegalArgumentException("needs at least one extension"); 
+        exts_ = extension;
     }
-    private String ext_;
+    private String[] exts_;
     public String getExtension() {
-        return ext_;
+        return exts_[0];
+    }
+    public List<String> getAllExtensions() {
+        return Arrays.asList(exts_);
     }
 }
