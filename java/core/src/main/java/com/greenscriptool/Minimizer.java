@@ -588,10 +588,12 @@ public class Minimizer implements IMinimizer {
     }
     
     private String preprocess_(String s) {
-        try {
-            s = lessEnabled_() ? less_.compile(s).replace("\\n", "\n") : s;
-        } catch (Exception e) {
-            logger_.warn("process inline content", e);
+        if (lessEnabled_()) {
+            try {
+                s = less_.compile(s);
+            } catch (Exception e) {
+                logger_.warn("process inline content", e);
+            }
         }
         return s;
     }
@@ -601,7 +603,7 @@ public class Minimizer implements IMinimizer {
         if (ResourceType.CSS == type_) {
             if (lessEnabled_()) {
                 try {
-                    s = less_.compile(s).replace("\\n", "\n");
+                    s = less_.compile(s);
                 } catch (LessException e) {
                     logger_.warn("error compile less file: " + originalFn, e);
                 }
