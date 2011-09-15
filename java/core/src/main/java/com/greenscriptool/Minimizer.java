@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.asual.lesscss.LessEngine;
+import com.asual.lesscss.LessException;
 import com.greenscriptool.utils.BufferLocator;
 import com.greenscriptool.utils.FileCache;
 import com.greenscriptool.utils.FileResource;
@@ -378,10 +379,7 @@ public class Minimizer implements IMinimizer {
         if (!processInline_)
             return content;
         try {
-            if (lessEnabled_()) {
-                //content = content.replaceAll("[\r\n]", " ");
-                content = less_.compile(content).replace("\\n", "\n");
-            }
+            content = preprocess_(content);
             if (this.compress_) {
                 Reader r = new StringReader(content);
                 StringWriter w = new StringWriter();
@@ -397,13 +395,8 @@ public class Minimizer implements IMinimizer {
 
     @Override
     public String processStatic(File file) {
-        String content;
         try {
-            if (lessEnabled_()) {
-                content = less_.compile(file).replace("\\n", "\n");
-            } else {
-                content = fileToString_(file);
-            }
+            String content = preprocess_(file, file.getPath());
             if (this.compress_) {
                 Reader r = new StringReader(content);
                 StringWriter w = new StringWriter();
@@ -413,7 +406,12 @@ public class Minimizer implements IMinimizer {
                 return content;
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            logger_.warn("error processing static file: " + file.getPath(), e);
+            try {
+                return fileToString_(file);
+            } catch (IOException e1) {
+                return "";
+            }
         }
     }
 
@@ -497,8 +495,7 @@ public class Minimizer implements IMinimizer {
      * 
      * @param fn the original file name
      */
-    private static final Pattern P_URL = Pattern.compile("url\\(['\"]?((?!data:)[^/'\"][^'\"]*)['\"]?\\)", Pattern.CASE_INSENSITIVE | Pattern.CANON_EQ | Pattern.UNICODE_CASE);
-
+    private static final Pattern P_URL = Pattern.compile("url\\(['\"]?([^/'\"][^'\"]*?)['\"]?\\)", Pattern.CASE_INSENSITIVE | Pattern.CANON_EQ | Pattern.UNICODE_CASE);
     private String processRelativeUrl_(String s, String fn) throws IOException {
         if (ResourceType.CSS != type_)
             throw new IllegalStateException("not a css minimizer");
@@ -517,8 +514,8 @@ public class Minimizer implements IMinimizer {
         }
         try {
             Matcher m = P_URL.matcher(s);
-            String retVal = m.replaceAll("url(" + prefix + "$1)");
-            return retVal;
+            s = m.replaceAll("url(" + prefix + "$1)");
+            return s;
         } catch (Throwable e) {
             System.err.println("Error process relative URL: " + fn);
             e.printStackTrace(System.err);
@@ -526,11 +523,11 @@ public class Minimizer implements IMinimizer {
         }
     }
 
-    private String processRelativeUrl_(File f, String originalFn)
-            throws IOException {
-        String s = fileToString_(f);
-        return processRelativeUrl_(s, originalFn);
-    }
+//    private String processRelativeUrl_(File f, String originalFn)
+//            throws IOException {
+//        String s = fileToString_(f);
+//        return processRelativeUrl_(s, originalFn);
+//    }
 
     private String fileToString_(File f) throws IOException {
         BufferedReader r = new BufferedReader(new FileReader(f));
@@ -564,25 +561,14 @@ public class Minimizer implements IMinimizer {
         lastModifiedCache_.put(file, getLastModified(file));
         // possibly due to error or pseudo resource name
         try {
+            String s = preprocess_(file, originalFn);
             if (compress_) {
                 try {
                     if (logger_.isTraceEnabled())
                         logger_.trace(String.format("compressing %1$s ...",
                                 file.getName()));
                     Reader r = null;
-                    // do less compile for css
-                    if (lessEnabled_()) {
-                        String s = less_.compile(file).replace("\\n", "\n");
-                        s = processRelativeUrl_(s, originalFn);
-                        r = new StringReader(s);
-                    } else {
-                        if (ResourceType.CSS == type_) {
-                            String s = processRelativeUrl_(file, originalFn);
-                            r = new StringReader(s);
-                        } else {
-                            r = new BufferedReader(new FileReader(file));
-                        }
-                    }
+                    r = null != s ? new StringReader(s) : new BufferedReader(new FileReader(file));
                     compressor_.compress(r, out);
                 } catch (Exception e) {
                     logger_.warn(
@@ -591,13 +577,38 @@ public class Minimizer implements IMinimizer {
                     copy_(file, out);
                 }
             } else {
-                copy_(file, out);
+                if (null != s) copy_(s, out);
+                else copy_(file, out);
             }
         } catch (IOException e) {
             logger_.warn(
                     "error processing javascript file file " + file.getName(),
                     e);
         }
+    }
+    
+    private String preprocess_(String s) {
+        try {
+            s = lessEnabled_() ? less_.compile(s).replace("\\n", "\n") : s;
+        } catch (Exception e) {
+            logger_.warn("process inline content", e);
+        }
+        return s;
+    }
+    
+    private String preprocess_(File file, String originalFn) throws IOException {
+        String s = fileToString_(file);
+        if (ResourceType.CSS == type_) {
+            if (lessEnabled_()) {
+                try {
+                    s = less_.compile(s).replace("\\n", "\n");
+                } catch (LessException e) {
+                    logger_.warn("error compile less file: " + originalFn, e);
+                }
+            }
+            s = processRelativeUrl_(s, originalFn);
+        }
+        return s;
     }
 
     private File getFile_(String resourceName) {
@@ -623,18 +634,26 @@ public class Minimizer implements IMinimizer {
     private static void copy_(File file, Writer out) throws IOException {
         if (logger_.isTraceEnabled())
             logger_.trace(String.format("merging file %1$s ...", file.getName()));
+        copy_(new FileReader(file), out);
+    }
+    
+    private static void copy_(Reader in, Writer out) throws IOException {
         String line = null;
         BufferedReader r = null;
         try {
-            r = new BufferedReader(new FileReader(file));
-            PrintWriter writer = new PrintWriter(out);
+            r = new BufferedReader(in);
+            PrintWriter w = new PrintWriter(out);
             while ((line = r.readLine()) != null) {
-                writer.println(line);
+                w.println(line);
             }
         } finally {
             if (null != r)
                 r.close();
         }
+    }
+    
+    private static void copy_(String s, Writer out) throws IOException {
+        copy_(new StringReader(s), out);
     }
 
     private IResource newCache_() {

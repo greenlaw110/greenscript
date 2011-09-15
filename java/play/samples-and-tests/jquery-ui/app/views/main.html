@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>#{get 'title' /}</title>
+        <meta charset="${_response_encoding}">
+        #{greenscript.css '/public/jqueryui/css/dot-luv/jquery-ui-1.8.16.custom', output: 'all'/}
+        #{greenscript.js '/public/jqueryui/js/jquery-ui-1.8.16.custom.min < jquery-1.6.2', output: 'all'/}
+    </head>
+    <body>
+        #{doLayout /}
+    </body>
+</html>

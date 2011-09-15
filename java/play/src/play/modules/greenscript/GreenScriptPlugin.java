@@ -58,7 +58,7 @@ import com.greenscriptool.utils.IBufferLocator;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.6d";
+    public static final String VERSION = "1.2.6e";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -211,10 +211,10 @@ public class GreenScriptPlugin extends PlayPlugin {
             else throw new UnexpectedException("Minimizer not initialized");
         }
         String fn = file.getName();
-        if (jsM_.isMinimizeEnabled() && fn.endsWith(".js")) {
+        if (fn.endsWith(".js") && jsM_.isMinimizeEnabled() && !file.relativePath().startsWith(minConf_.getProperty("greenscript.url.minimized"))) {
             return processStatic_(file, request, response, ResourceType.JS);
         }
-        if (cssM_.isMinimizeEnabled() && (fn.endsWith("css") || fn.endsWith("less"))) {
+        if ((fn.endsWith("css") || fn.endsWith("less")) && cssM_.isMinimizeEnabled() && !file.relativePath().startsWith(minConf_.getProperty("greenscript.url.minimized"))) {
             return processStatic_(file, request, response, ResourceType.CSS);
         }
         
@@ -629,7 +629,7 @@ public class GreenScriptPlugin extends PlayPlugin {
  * History
  * -----------------------------------------------------------
  * 1.2.6
- *  - support LESS
+ *  - support LESS, E-Tag and Last-Modified http header
  * 1.2.5:
  *  - support in memory cache
  * 1.2.3:
