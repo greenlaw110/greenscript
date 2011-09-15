@@ -599,17 +599,16 @@ public class Minimizer implements IMinimizer {
     }
     
     private String preprocess_(File file, String originalFn) throws IOException {
-        String s = fileToString_(file);
-        if (ResourceType.CSS == type_) {
-            if (lessEnabled_()) {
-                try {
-                    s = less_.compile(s);
-                } catch (LessException e) {
-                    logger_.warn("error compile less file: " + originalFn, e);
-                }
+        String s = null;
+        if (lessEnabled_()) {
+            try {
+                s = less_.compile(file).replace("\\n", "\n");
+            } catch (LessException e) {
+                logger_.warn("error compile less file: " + originalFn, e);
             }
-            s = processRelativeUrl_(s, originalFn);
         }
+        if (null == s) s = fileToString_(file);
+        if (ResourceType.CSS == type_) s = processRelativeUrl_(s, originalFn);
         return s;
     }
 
