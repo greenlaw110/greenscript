@@ -45,13 +45,14 @@ public class Minimizer implements IMinimizer {
     private boolean inMemory_;
     private boolean processInline_;
 
-    private FileCache cache_;
-    private String resourceDir_;
-    private String rootDir_;
+    private FileCache cache_ = null;
+    private String resourcePath_ = null;
+    private String rootDir_ = null;
 
-    private String resourceUrlRoot_ = "";
-    private String resourceUrlPath_;
-    private String cacheUrlPath_;
+    private String ctxPath_ = null;
+    private String resourceUrlRoot_ = null;
+    private String resourceUrlPath_ = null;
+    private String cacheUrlPath_ = null;
 
     private ICompressor compressor_;
     private ResourceType type_;
@@ -135,23 +136,35 @@ public class Minimizer implements IMinimizer {
 
     @Override
     public void setResourceDir(String dir) {
-        // if (!dir.isDirectory()) throw new
-        // IllegalArgumentException("not a directory");
         checkInitialize_(false);
-        resourceDir_ = dir;
+        if (rootDir_ == null) throw new IllegalStateException("rootDir need to be intialized first");
+        if (dir.startsWith(rootDir_)) {
+            resourcePath_ = dir;
+        } else if (dir.startsWith("/")) {
+            resourcePath_ = rootDir_ + dir; 
+        } else {
+            resourcePath_ = rootDir_ + "/" + dir;
+        }
+        File f = fl_.locate(resourcePath_);
+        if (!f.isDirectory()) throw new IllegalArgumentException("not a directory");
     }
 
     @Override
     public void setRootDir(String dir) {
-        // if (!dir.isDirectory()) throw new
-        // IllegalArgumentException("not a directory");
-//        if (!(dir.startsWith("/") || dir.startsWith(File.separator))) {
-//            throw new IllegalArgumentException("root dir shall be start with /");
-//        }
         checkInitialize_(false);
-        rootDir_ = dir.replaceFirst("[/\\\\]$", "");
+        if (fl_ == null) throw new IllegalStateException("file locator need to initialized first");
+        rootDir_ = dir.endsWith("/") ? dir.substring(0, dir.length() - 1) : dir;
+        File f = fl_.locate(rootDir_);
+        if (!f.isDirectory()) throw new IllegalArgumentException("not a directory");
         if (logger_.isDebugEnabled())
             logger_.debug(String.format("root dir set to %1$s", dir));
+    }
+    
+    @Override
+    public void setUrlContextPath(String ctxPath) {
+        if (null == ctxPath) throw new NullPointerException();
+        if (ctxPath.endsWith("/")) ctxPath = ctxPath.substring(0, ctxPath.length() - 1);
+        ctxPath_ = ctxPath;
     }
 
     @Override
@@ -164,37 +177,48 @@ public class Minimizer implements IMinimizer {
 
     @Override
     public void setResourceUrlRoot(String urlRoot) {
+        if (ctxPath_ == null) throw new IllegalStateException("ctxPath must be intialized first");
         if (!urlRoot.startsWith("/"))
             throw new IllegalArgumentException("url root must start with /");
         // checkInitialize_(false);
         if (!urlRoot.endsWith("/"))
             urlRoot = urlRoot + "/";
-        resourceUrlRoot_ = urlRoot;
+        
+        resourceUrlRoot_ = urlRoot.startsWith(ctxPath_) ? urlRoot : ctxPath_ + urlRoot;
         if (logger_.isDebugEnabled())
             logger_.debug(String.format("url root set to %1$s", urlRoot));
     }
-
+    
     @Override
     public void setResourceUrlPath(String urlPath) {
-        if (!urlPath.startsWith("/"))
-            throw new IllegalArgumentException("url path must start with /");
         checkInitialize_(false);
+        if (null == resourceUrlRoot_) {
+            throw new IllegalStateException("resourceUrlRoot must be initiated first");
+        }
         if (!urlPath.endsWith("/"))
             urlPath = urlPath + "/";
-        resourceUrlPath_ = urlPath;
+        if (urlPath.startsWith("/")) {
+            resourceUrlPath_ = urlPath.startsWith(ctxPath_) ? urlPath : ctxPath_ + urlPath;
+        } else {
+            resourceUrlPath_ = resourceUrlRoot_ + urlPath;
+        }
         if (logger_.isDebugEnabled())
             logger_.debug(String.format("url path set to %1$s", urlPath));
     }
-
+    
     @Override
     public void setCacheUrlPath(String urlPath) {
-        if (!urlPath.startsWith("/"))
-            throw new IllegalArgumentException(
-                    "resource url path must start with /");
         checkInitialize_(false);
+        if (null == resourceUrlRoot_) {
+            throw new IllegalStateException("resourceUrlRoot must be initiated first");
+        }
         if (!urlPath.endsWith("/"))
             urlPath = urlPath + "/";
-        cacheUrlPath_ = urlPath;
+        if (urlPath.startsWith("/")) {
+            cacheUrlPath_ = urlPath.startsWith(ctxPath_) ? urlPath : ctxPath_ + urlPath;
+        } else {
+            cacheUrlPath_ = resourceUrlRoot_ + urlPath;
+        }
         if (logger_.isDebugEnabled())
             logger_.debug(String.format("cache url root set to %1$s", urlPath));
     }
@@ -343,7 +367,6 @@ public class Minimizer implements IMinimizer {
             if (null != l) return l;
         }
         List<String> l = new ArrayList<String>();
-        String urlPath = resourceUrlPath_;
         for (String fn : resourceNames) {
             if (isCDN_(fn))
                 l.add(fn); // CDN resource
@@ -359,15 +382,10 @@ public class Minimizer implements IMinimizer {
                         continue;
                     }
                 }
+                fn = getUrl_(fn);
                 String ext = getExtension_(f.getName());
                 fn = fn.endsWith(ext) ? fn : fn + ext;
-                if (fn.startsWith("/")) {
-                    if (!fn.startsWith(resourceUrlRoot_))
-                        l.add(resourceUrlRoot_ + fn.replaceFirst("/", ""));
-                    else
-                        l.add(fn);
-                } else
-                    l.add(urlPath + fn);
+                l.add(fn);
             }
         }
         processCache2_.put(resourceNames, l);
@@ -508,7 +526,9 @@ public class Minimizer implements IMinimizer {
 
         String prefix;
         if (fn.startsWith("/")) {
-            prefix = fn.startsWith(resourceUrlRoot_) ? fn : resourceUrlRoot_ + fn.replaceFirst("/", "");
+            if (fn.startsWith(resourceUrlPath_)) prefix = fn;
+            else if (fn.startsWith(resourceUrlRoot_)) prefix = fn;
+            else prefix = resourceUrlRoot_ + fn.replaceFirst("/", "");
         } else {
             prefix = resourceUrlPath_ + fn;
         }
@@ -590,7 +610,7 @@ public class Minimizer implements IMinimizer {
     private String preprocess_(String s) {
         if (lessEnabled_()) {
             try {
-                s = less_.compile(s);
+                s = less_.compile(s).replace("\\n", "\n");
             } catch (Exception e) {
                 logger_.warn("process inline content", e);
             }
@@ -611,10 +631,26 @@ public class Minimizer implements IMinimizer {
         if (ResourceType.CSS == type_) s = processRelativeUrl_(s, originalFn);
         return s;
     }
+    
+    private String getUrl_(String resourceName) {
+        if (!"".equals(ctxPath_) && resourceName.startsWith(ctxPath_)) return resourceName;
+        if (resourceName.startsWith("/")) {
+            String s = ctxPath_ + resourceName;
+            if (s.startsWith(resourceUrlRoot_)) return s;
+            else return resourceUrlRoot_ + resourceName.substring(1, resourceName.length());
+        } else {
+            return resourceUrlPath_ + resourceName;
+        }
+    }
 
     private File getFile_(String resourceName) {
+        if (resourceName.startsWith("/") && !resourceName.startsWith(ctxPath_)) {
+            resourceName = ctxPath_ + resourceName;
+        }
         if (resourceName.startsWith(resourceUrlPath_)) {
             resourceName = resourceName.replaceFirst(resourceUrlPath_, "");
+        } else if (resourceName.startsWith(resourceUrlRoot_)) {
+            resourceName = resourceName.replaceFirst(resourceUrlRoot_, "/");
         }
         String fn = resourceName;
         String path;
@@ -622,7 +658,7 @@ public class Minimizer implements IMinimizer {
             path = (!fn.startsWith(rootDir_)) ? rootDir_ + "/"
                     + fn.replaceFirst("/", "") : fn;
         } else {
-            path = rootDir_ + "/" + resourceDir_ + "/" + fn;
+            path = resourcePath_ + "/" + fn;
         }
         for (String ext: type_.getAllExtensions()) {
             String p = fn.endsWith(ext) ? path : path + ext;
@@ -671,7 +707,7 @@ public class Minimizer implements IMinimizer {
     }
 
     private void checkInitialize_(boolean initialized) {
-        boolean notInited = (resourceDir_ == null || rootDir_ == null
+        boolean notInited = (resourcePath_ == null || rootDir_ == null
                 || resourceUrlPath_ == null || cache_ == null || cacheUrlPath_ == null);
 
         if (initialized == notInited) {

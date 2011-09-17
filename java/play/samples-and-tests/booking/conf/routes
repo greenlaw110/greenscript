@@ -16,6 +16,9 @@ POST    /settings                               Hotels.saveSettings
 POST    /login                                  Application.login
 GET     /logout                                 Application.logout
 
+* /gsconf/ module:greenscript
+* / module:secure
+
 # Map static resources from the /app/public folder to the /public path
 GET     /public/                                staticDir:public
 

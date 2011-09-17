@@ -170,6 +170,8 @@ public interface IMinimizer extends IProcessor {
      */
     void setResourceUrlRoot(String urlRoot);
     
+    void setUrlContextPath(String ctxPath);
+    
     /**
      * <p>Set the url path of processed resources. The <code>urlPath</code> 
      * specified must start with "/".</p> 

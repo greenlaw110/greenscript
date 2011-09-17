@@ -48,7 +48,9 @@ import com.greenscriptool.utils.IBufferLocator;
  * 
  * @author greenlaw110@gmail.com
  * @version 1.2.6, 2011-09-04
- *          support LESS, fix bug: https://github.com/greenlaw110/greenscript/issues/18
+ *          support LESS, 
+ *          fix bug: https://github.com/greenlaw110/greenscript/issues/18
+ *          fix bug: https://github.com/greenlaw110/greenscript/issues/19
  * @version 1.2.5, 2011-08-07
  *          support in-memory cache
  * @version 1.2.1, 2011-01-20 
@@ -58,7 +60,7 @@ import com.greenscriptool.utils.IBufferLocator;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.6f";
+    public static final String VERSION = "1.2.6g";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -454,6 +456,15 @@ public class GreenScriptPlugin extends PlayPlugin {
     protected boolean inMemoryCache = false;
     private Minimizer initializeMinimizer_(Properties p, ResourceType type) {
         final Minimizer m = new Minimizer(type);
+        m.setFileLocator(new IFileLocator(){
+            @Override
+            public File locate(String path) {
+                VirtualFile vf = VirtualFile.search(Play.roots, path);
+                return vf == null ? null : vf.getRealFile();
+            }
+        });
+        m.setBufferLocator(bufferLocator_);
+
         String ext = type.getExtension();
         String rootDir = fetchProp_(p, "greenscript.dir.root");
         String resourceDir = fetchProp_(p, "greenscript.dir" + ext);
@@ -463,12 +474,13 @@ public class GreenScriptPlugin extends PlayPlugin {
         String resourceUrl = fetchProp_(p, "greenscript.url" + ext);
         String cacheUrl = fetchProp_(p, "greenscript.url.minimized");
         
-        m.setCacheDir(Play.getFile(cacheDir));
-        m.setCacheUrlPath(cacheUrl);
-        m.setResourceDir(resourceDir);
+        m.setUrlContextPath(Play.ctxPath);
         m.setResourceUrlRoot(urlRoot);
         m.setResourceUrlPath(resourceUrl);
+        m.setCacheUrlPath(cacheUrl);
         m.setRootDir(rootDir);
+        m.setCacheDir(Play.getFile(cacheDir));
+        m.setResourceDir(resourceDir);
         
         boolean minimize = getBooleanProp_(p, "greenscript.minimize", Play.mode == Mode.PROD);
         boolean compress = getBooleanProp_(p, "greenscript.compress", true);
@@ -481,14 +493,6 @@ public class GreenScriptPlugin extends PlayPlugin {
         m.enableDisableCache(cache);
         m.enableDisableInMemoryCache(inMemoryCache);
         m.enableDisableProcessInline(processInline);
-        m.setFileLocator(new IFileLocator(){
-            @Override
-            public File locate(String path) {
-                VirtualFile vf = VirtualFile.search(Play.roots, path);
-                return vf == null ? null : vf.getRealFile();
-            }
-        });
-        m.setBufferLocator(bufferLocator_);
         
         trace_("minimizer for %1$s loaded", type.name());
         return m;

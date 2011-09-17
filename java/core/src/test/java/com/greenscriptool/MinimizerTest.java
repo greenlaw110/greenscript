@@ -21,7 +21,7 @@ public class MinimizerTest extends BaseTest {
     protected String jsUrlPath = "/js";
     protected String cssUrlPath = "/css";
     protected String cacheUrlPath = "/gs";
-    protected String cssUrlRoot = "/public";
+    protected String urlRoot = "/public";
     
     protected List<String> l = null; // temporarily holding processing result
     
@@ -37,6 +37,8 @@ public class MinimizerTest extends BaseTest {
         jm.setRootDir(rootDir.getAbsolutePath());
         jm.setResourceDir("javascripts");
         jm.setCacheDir(cacheDir);
+        jm.setUrlContextPath("");
+        jm.setResourceUrlRoot(urlRoot);
         jm.setResourceUrlPath(jsUrlPath);
         jm.setCacheUrlPath(cacheUrlPath);
         //jm.enableDisableInMemoryCache(true);
@@ -44,10 +46,11 @@ public class MinimizerTest extends BaseTest {
         cm = new Minimizer(ResourceType.CSS);
         cm.setRootDir(rootDir.getAbsolutePath());
         cm.setResourceDir("stylesheets");
+        cm.setUrlContextPath("");
+        cm.setResourceUrlRoot(urlRoot);
         cm.setCacheDir(cacheDir);
         cm.setResourceUrlPath(cssUrlPath);
         cm.setCacheUrlPath(cacheUrlPath);
-        cm.setResourceUrlRoot(cssUrlRoot);
         
         jm.enableDisableMinimize(false);
         cm.enableDisableMinimize(false);
@@ -72,7 +75,7 @@ public class MinimizerTest extends BaseTest {
     @Test
     public void testProcessWithMinimizeDisabled() {
         // normal js case
-        v_("/js/a.js,/js/b.js,/c.js", "a,b,/c", jm);
+        v_("/js/a.js,/js/b.js,/public/c.js", "a,b,/c", jm);
         // with cdn
         v_("/js/a.js,http://abc.com/a.js,/js/b.js", "a,http://abc.com/a.js,b.js", jm);
         

@@ -10,5 +10,7 @@ GET         /signin                 Chat.signin
 POST        /signin                 Chat.register
 GET         /logout                 Chat.disconnect
 
-GET			/        		        staticDir:public
+* /gsconf/ module:greenscript
+* / module:secure
 
+GET			/        		        staticDir:public
