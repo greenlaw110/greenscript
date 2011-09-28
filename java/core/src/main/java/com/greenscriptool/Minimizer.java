@@ -25,6 +25,8 @@ import javax.inject.Inject;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jcoffeescript.JCoffeeScriptCompileException;
+import org.jcoffeescript.JCoffeeScriptCompiler;
 
 import com.asual.lesscss.LessEngine;
 import com.asual.lesscss.LessException;
@@ -58,6 +60,7 @@ public class Minimizer implements IMinimizer {
     private ResourceType type_;
 
     private LessEngine less_;
+    private JCoffeeScriptCompiler coffee_;
 
     public Minimizer(ResourceType type) {
         this(new GreenScriptCompressor(type), type);
@@ -70,6 +73,7 @@ public class Minimizer implements IMinimizer {
         compressor_ = compressor;
         type_ = type;
         less_ = new LessEngine();
+        coffee_ = new JCoffeeScriptCompiler();
     }
 
     @Override
@@ -406,15 +410,25 @@ public class Minimizer implements IMinimizer {
             } else {
                 return content;
             }
+        } catch (StackOverflowError e) {
+            logger_.error("fatal error compressing inline content:" + e.getMessage());
+            return content;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            logger_.error("error processing inline content", e);
+            return content;
         }
     }
 
     @Override
     public String processStatic(File file) {
+        String content = null;
         try {
-            String content = preprocess_(file, file.getPath());
+            content = preprocess_(file, file.getPath());
+        } catch (IOException e2) {
+            logger_.error("error preprocess static file: " + file.getPath());
+            return "";
+        }
+        try {
             if (this.compress_) {
                 Reader r = new StringReader(content);
                 StringWriter w = new StringWriter();
@@ -423,6 +437,9 @@ public class Minimizer implements IMinimizer {
             } else {
                 return content;
             }
+        } catch (StackOverflowError e) {
+            logger_.error("fatal error compressing static file: " + file.getName());
+            return content;
         } catch (Exception e) {
             logger_.warn("error processing static file: " + file.getPath(), e);
             try {
@@ -432,33 +449,35 @@ public class Minimizer implements IMinimizer {
             }
         }
     }
+    
+    private static String dos2unix_(String s) {
+        return s.replaceAll("\r\n", "\n");
+    }
+    
+    private String compileLess_(String s) throws LessException {
+        return less_.compile(dos2unix_(s)).replace("\\n", "\n");
+    }
+    
+    private String compileLess_(File f) throws LessException {
+        return less_.compile(f).replace("\\n", "\n");
+    }
 
     private String minimize_(List<String> resourceNames) {
         FileCache cache = cache_;
 
-        // List<String> l = new ArrayList<String>();
         if (useCache_) {
             String fn = cache.get(resourceNames);
             if (null != fn) {
                 if (logger_.isDebugEnabled())
                     logger_.debug("cached file returned: " + fn);
-                // l.add(cacheUrlPath_ + fn);
                 return cacheUrlPath_ + fn;
-
-                // for (String s: resourceNames) {
-                // if (s.startsWith("http")) {
-                // l.add(s);
-                // }
-                // }
-
-                // return l;
             }
         }
 
         IResource rsrc = newCache_();
-        Writer out = null;
+        Writer out = rsrc.getWriter();
+        StringWriter sw = new StringWriter();
         try {
-            out = rsrc.getWriter();
             for (String s : resourceNames) {
                 // if (s.startsWith("http:")) l.add(s);
                 if (isCDN_(s))
@@ -467,15 +486,39 @@ public class Minimizer implements IMinimizer {
                 else {
                     File f = getFile_(s);
                     if (null != f && f.exists())
-                        merge_(f, out, s);
+                        merge_(f, sw, s);
                     else
                         ; // possibly a pseudo or error resource name
                 }
             }
+            String s = sw.toString();
+            if (lessEnabled_() && postMergeLessCompile_()) {
+                try {
+                    s = compileLess_(s);
+                } catch (LessException e) {
+                    logger_.warn("Error compile less content: " +  e.getMessage());
+                }
+                if (compress_) {
+                    try {
+                        Reader r = null;
+                        r = new StringReader(s);
+                        compressor_.compress(r, out);
+                    } catch (StackOverflowError e) {
+                        logger_.error("fatal error compressing resource: " + e.getMessage());
+                    } catch (Exception e) {
+                        logger_.warn("error compressoing merged content", e);
+                        copy_(s, out);
+                    }
+                } else {
+                    copy_(s, out);
+                }
+            } else {
+                copy_(s, out);
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            if (out != null) {
+            if (null != out) {
                 try {
                     out.close();
                 } catch (IOException e) {
@@ -483,15 +526,12 @@ public class Minimizer implements IMinimizer {
                 }
             }
         }
-
         String fn = rsrc.getKey();
         // filename always cached without regarding to cache setting
         // this is a good time to remove previous file
         // Note it's absolutely not a good idea to turn cache off
         // and minimize on in a production environment
         cache.put(resourceNames, fn);
-        // l.add(cacheUrlPath_ + fn);
-        // return l;
         return cacheUrlPath_ + fn;
     }
 
@@ -543,12 +583,6 @@ public class Minimizer implements IMinimizer {
         }
     }
 
-//    private String processRelativeUrl_(File f, String originalFn)
-//            throws IOException {
-//        String s = fileToString_(f);
-//        return processRelativeUrl_(s, originalFn);
-//    }
-
     private String fileToString_(File f) throws IOException {
         BufferedReader r = new BufferedReader(new FileReader(f));
         String l = null;
@@ -582,7 +616,7 @@ public class Minimizer implements IMinimizer {
         // possibly due to error or pseudo resource name
         try {
             String s = preprocess_(file, originalFn);
-            if (compress_) {
+            if (compress_ && (!lessEnabled_() || !postMergeLessCompile_())) {
                 try {
                     if (logger_.isTraceEnabled())
                         logger_.trace(String.format("compressing %1$s ...",
@@ -610,21 +644,33 @@ public class Minimizer implements IMinimizer {
     private String preprocess_(String s) {
         if (lessEnabled_()) {
             try {
-                s = less_.compile(s).replace("\\n", "\n");
+                s = compileLess_(s);
             } catch (Exception e) {
-                logger_.warn("process inline content", e);
+                logger_.warn("process inline content: " + e.getMessage());
             }
         }
         return s;
     }
     
+    private boolean postMergeLessCompile_() {
+        return Boolean.valueOf(System.getProperty("greenscript.lessCompile.postMerge", "false"));
+    }
+    
     private String preprocess_(File file, String originalFn) throws IOException {
         String s = null;
-        if (lessEnabled_()) {
+        if (lessEnabled_() && !postMergeLessCompile_()) {
             try {
-                s = less_.compile(file).replace("\\n", "\n");
+                s = compileLess_(file);
             } catch (LessException e) {
-                logger_.warn("error compile less file: " + originalFn, e);
+                logger_.warn("error compile less file: " + originalFn + ", error: " + e.getMessage());
+            }
+        } else {
+            if (file.getName().endsWith(".coffee")) {
+                try {
+                    s = coffee_.compile(fileToString_(file));
+                } catch (JCoffeeScriptCompileException e) {
+                    logger_.error("error compile coffee script file", e);
+                }
             }
         }
         if (null == s) s = fileToString_(file);

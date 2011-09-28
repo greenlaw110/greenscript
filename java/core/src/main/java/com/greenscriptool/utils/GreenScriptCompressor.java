@@ -21,7 +21,7 @@ public class GreenScriptCompressor implements ICompressor {
    public GreenScriptCompressor(ResourceType type) {
       type_ = type;
    }
-
+   
    @Override
    public void compress(Reader r, Writer w) throws Exception {
       if (null == r || null == w)
@@ -34,12 +34,6 @@ public class GreenScriptCompressor implements ICompressor {
          case JS:
              new JavaScriptCompressor(r, er_).compress(w, -1, true,
                      false, false, false);
-//            if (useGoogleClosure_()) {
-//               new GoogleClosureCompiler().compress(input, output);
-//            } else {
-//               new JavaScriptCompressor(r, er_).compress(output, -1, true,
-//                     false, false, false);
-//            }
             break;
          default:
             throw new RuntimeException("Resource type not recognized: "

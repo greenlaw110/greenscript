@@ -8,11 +8,12 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 
@@ -25,6 +26,7 @@ import play.exceptions.UnexpectedException;
 import play.jobs.Job;
 import play.jobs.JobsPlugin;
 import play.libs.Time;
+import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Http.Request;
 import play.mvc.Http.Response;
@@ -51,6 +53,7 @@ import com.greenscriptool.utils.IBufferLocator;
  *          support LESS, 
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/18
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/19
+ *          fix bug: https://github.com/greenlaw110/greenscript/issues/21
  * @version 1.2.5, 2011-08-07
  *          support in-memory cache
  * @version 1.2.1, 2011-01-20 
@@ -60,7 +63,7 @@ import com.greenscriptool.utils.IBufferLocator;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.6g";
+    public static final String VERSION = "1.2.6i";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -101,13 +104,14 @@ public class GreenScriptPlugin extends PlayPlugin {
         defProps_.put("greenscript.url.minimized", "/public/gs");
         // operation switches
         defProps_.setProperty("greenscript.minimize", Play.mode == Mode.PROD ? "true" : "false");
-        defProps_.setProperty("greenscript.compress", "true");
-        defProps_.setProperty("greenscript.cache", "true");
-        defProps_.setProperty("greenscript.cache.inmemory", "false");
+        defProps_.setProperty("greenscript.compress", Play.mode == Mode.PROD ? "true" : "false");
+        defProps_.setProperty("greenscript.cache", Play.mode == Mode.PROD ? "true" : "false");
+        defProps_.setProperty("greenscript.cache.inmemory", "true");
         defProps_.setProperty("greenscript.less.enabled", "false");
         defProps_.setProperty("greenscript.inline.process", "false");
         defProps_.setProperty("greenscript.js.cache.check", "10s");
         defProps_.setProperty("greenscript.css.cache.check", "10s");
+        defProps_.setProperty("greenscript.lessCompile.postMerge", "false");
     }
     
     public GreenScriptPlugin() {
@@ -120,28 +124,36 @@ public class GreenScriptPlugin extends PlayPlugin {
     public void onConfigurationRead() {
         
         loadDependencies();
-        InitializeMinimizers();
         
         eTag_ = Play.configuration.getProperty("http.useETag", "true").equalsIgnoreCase("true");
         
         info_("initialized");
     }
     
-    private void updateRoute_() {
+    private boolean stopRouteUpdate_ = false;
+    private synchronized void updateRoute_() {
         if (inMemoryCache) {
-            String url = fetchProp_(Play.configuration, "greenscript.url.minimized");
+            String url = cacheUrlPath_();
             Router.addRoute(0, "GET", 
                     url + "/{key}", 
                     "greenscript.Service.getInMemoryCache",
                     null,
                     null);
         } else {
+            stopRouteUpdate_ = true;
             Router.load(Play.ctxPath);
+            stopRouteUpdate_ = false;
         }
     }
     
+    /**
+     * Moved initialize from onApplicationStart to onRoutersLoaded because
+     * Servlet 2.4 does not allow you to get the context path from the servletcontext...
+     */
     @Override
-    public void onApplicationStart() {
+    public synchronized void onRoutesLoaded() {
+        if (stopRouteUpdate_) return;
+        InitializeMinimizers();
         updateRoute_();
     }
     
@@ -196,11 +208,34 @@ public class GreenScriptPlugin extends PlayPlugin {
     public static IRenderSession cssSession() {
         return sessCss_.get();
     }
+    
+    private static class ResourceResolver extends Controller {
+        public static String def(ResourceType type) {
+            String template = Controller.template();
+            String urlPath = resourceUrl_.get(type.getExtension());
+            return null == template ? null : template.replaceFirst("^views/", urlPath).replaceFirst("\\.[\\w]+$", type.getExtension());
+        }
+    }
 
     @Override
     public void beforeActionInvocation(Method actionMethod) {
-        sessJs_.set(newSession_(ResourceType.JS));
-        sessCss_.set(newSession_(ResourceType.CSS));
+        IRenderSession sess = newSession_(ResourceType.JS);
+        sessJs_.set(sess);
+        /*
+         * Automatically declare js resource
+         * e.g /public/javascripts/Application/index.js 
+         */
+        String def = ResourceResolver.def(ResourceType.JS);
+        sess.declare(def, null, null);
+
+        sess = newSession_(ResourceType.CSS);
+        sessCss_.set(sess);
+        /*
+         * Automatically declare js resource 
+         * e.g. /public/stylesheets/Application/index.css
+         */
+        def = ResourceResolver.def(ResourceType.CSS);
+        sess.declare(def, null, null);
     }
     
     
@@ -213,10 +248,10 @@ public class GreenScriptPlugin extends PlayPlugin {
             else throw new UnexpectedException("Minimizer not initialized");
         }
         String fn = file.getName();
-        if (fn.endsWith(".js") && jsM_.isMinimizeEnabled() && !file.relativePath().startsWith(minConf_.getProperty("greenscript.url.minimized"))) {
+        if (fn.endsWith(".coffee") || (fn.endsWith(".js") && jsM_.isMinimizeEnabled() && !file.relativePath().startsWith(cacheUrlPath_()))) {
             return processStatic_(file, request, response, ResourceType.JS);
         }
-        if ((fn.endsWith("css") || fn.endsWith("less")) && cssM_.isMinimizeEnabled() && !file.relativePath().startsWith(minConf_.getProperty("greenscript.url.minimized"))) {
+        if ((fn.endsWith("css") || fn.endsWith("less")) && cssM_.isMinimizeEnabled() && !file.relativePath().startsWith(cacheUrlPath_())) {
             return processStatic_(file, request, response, ResourceType.CSS);
         }
         
@@ -260,11 +295,13 @@ public class GreenScriptPlugin extends PlayPlugin {
 //    }
     
     private boolean processStatic_(VirtualFile file, Request req, Response resp, ResourceType type) {
+        /*
         IRenderSession sess = type == ResourceType.JS ? jsSession() : cssSession();
         if (null != sess && sess.hasDeclared()) {
             // do not service static if requesting to minimized files
             return false;
         }
+        */
         if (Play.mode == Mode.PROD) {
             resp.cacheFor("1h");
         }
@@ -454,6 +491,44 @@ public class GreenScriptPlugin extends PlayPlugin {
     }
     public static final String CACHE_KEY_BUFFER = "greenscript.buffer";
     protected boolean inMemoryCache = false;
+    private static Map<String, String> resourceUrl_ = new HashMap<String, String>();
+    private void setResourceUrlPath_(String resourceUrlRoot, String resourceUrlPath, String ext){
+        String path = null, ctxPath = Play.ctxPath;
+        if (!resourceUrlPath.endsWith("/"))
+            resourceUrlPath = resourceUrlPath + "/";
+        if (resourceUrlPath.startsWith("/")) {
+            path = resourceUrlPath.startsWith(ctxPath) ? resourceUrlPath : ctxPath + resourceUrlPath;
+        } else {
+            path = resourceUrlRoot + resourceUrlPath;
+        }
+        resourceUrl_.put(ext, path);
+    }
+    private String resourceUrlRoot_() {
+        Properties p = minConf_;
+        String urlRoot = fetchProp_(p, "greenscript.url.root");
+        if (!urlRoot.startsWith("/"))
+            throw new IllegalArgumentException("url root must start with /");
+        // checkInitialize_(false);
+        if (!urlRoot.endsWith("/"))
+            urlRoot = urlRoot + "/";
+        
+        return urlRoot.startsWith(Play.ctxPath) ? urlRoot : Play.ctxPath + urlRoot;
+    }
+    private String cacheUrlPath_() {
+        String resourceUrlRoot = resourceUrlRoot_();
+        if (null == resourceUrlRoot) {
+            throw new IllegalStateException("resourceUrlRoot must be initiated first");
+        }
+        Properties p = Play.configuration;
+        String urlPath = fetchProp_(p, "greenscript.url.minimized"), ctxPath = Play.ctxPath;
+        if (!urlPath.endsWith("/"))
+            urlPath = urlPath + "/";
+        if (urlPath.startsWith("/")) {
+            return urlPath.startsWith(ctxPath) ? urlPath : ctxPath + urlPath;
+        } else {
+            return resourceUrlRoot + urlPath;
+        }
+    }
     private Minimizer initializeMinimizer_(Properties p, ResourceType type) {
         final Minimizer m = new Minimizer(type);
         m.setFileLocator(new IFileLocator(){
@@ -470,9 +545,10 @@ public class GreenScriptPlugin extends PlayPlugin {
         String resourceDir = fetchProp_(p, "greenscript.dir" + ext);
         String cacheDir = fetchProp_(p, "greenscript.dir.minimized");
         
-        String urlRoot = fetchProp_(p, "greenscript.url.root");
+        String urlRoot = resourceUrlRoot_();
         String resourceUrl = fetchProp_(p, "greenscript.url" + ext);
-        String cacheUrl = fetchProp_(p, "greenscript.url.minimized");
+        String cacheUrl = cacheUrlPath_();
+        setResourceUrlPath_(urlRoot, resourceUrl, ext);
         
         m.setUrlContextPath(Play.ctxPath);
         m.setResourceUrlRoot(urlRoot);
@@ -487,6 +563,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         boolean cache = getBooleanProp_(p, "greenscript.cache", true);
         inMemoryCache = getBooleanProp_(p, "greenscript.cache.inmemory", false);
         boolean processInline = getBooleanProp_(p, "greenscript.inline.process", false);
+        System.setProperty("greenscript.lessCompile.postMerge", fetchProp_(p, "greenscript.lessCompile.postMerge"));
         
         m.enableDisableMinimize(minimize);
         m.enableDisableCompress(compress);
