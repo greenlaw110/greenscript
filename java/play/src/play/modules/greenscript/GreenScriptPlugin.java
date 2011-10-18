@@ -63,7 +63,7 @@ import com.greenscriptool.utils.IBufferLocator;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.6i";
+    public static final String VERSION = "1.2.6k";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -255,7 +255,21 @@ public class GreenScriptPlugin extends PlayPlugin {
             return processStatic_(file, request, response, ResourceType.CSS);
         }
         
-        return super.serveStatic(file, request, response);
+        if (fn.endsWith(".css") || fn.endsWith(".js")) {
+            // minimized resource
+            final long l = file.lastModified();
+            final String etag = "\"" + l + "-" + file.hashCode() + "\"";
+            Map<String, Http.Header> headers = request.headers;
+            if (headers.containsKey("if-none-match") && headers.containsKey("if-modified-since")) {
+                if ("GET".equalsIgnoreCase(request.method)) {
+                    response.status = Http.StatusCode.NOT_MODIFIED;
+                    response.cacheFor(etag, "100d", l);
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
     
 //    private static final Pattern P_IMPORT = Pattern.compile(".*@import\\s*\"(.*?)\".*"); 

@@ -3,6 +3,14 @@ h1. GreenScript module
 The GreenScript module help you to manage javascript and CSS dependencies and do minimizing work in the same time.
 <script type="text/javascript" src="http://www.ohloh.net/p/485839/widgets/project_users_logo.js"></script>
 
+h2. <a>What's New for v1.2.6k</a>
+
+* Fix a bug that cached content get cleared by accident
+
+h2. <a>What's New for v1.2.6j</a>
+
+* Remove jcoffeescript.jar for the moment (memory leak suspect)
+
 h2. <a>What's New for v1.2.6i</a>
 
 * Support LESS process for static service

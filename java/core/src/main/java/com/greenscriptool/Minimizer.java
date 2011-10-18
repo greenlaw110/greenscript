@@ -25,8 +25,6 @@ import javax.inject.Inject;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.jcoffeescript.JCoffeeScriptCompileException;
-import org.jcoffeescript.JCoffeeScriptCompiler;
 
 import com.asual.lesscss.LessEngine;
 import com.asual.lesscss.LessException;
@@ -60,7 +58,7 @@ public class Minimizer implements IMinimizer {
     private ResourceType type_;
 
     private LessEngine less_;
-    private JCoffeeScriptCompiler coffee_;
+    //private JCoffeeScriptCompiler coffee_;
 
     public Minimizer(ResourceType type) {
         this(new GreenScriptCompressor(type), type);
@@ -73,7 +71,7 @@ public class Minimizer implements IMinimizer {
         compressor_ = compressor;
         type_ = type;
         less_ = new LessEngine();
-        coffee_ = new JCoffeeScriptCompiler();
+        //coffee_ = new JCoffeeScriptCompiler();
     }
 
     @Override
@@ -323,7 +321,7 @@ public class Minimizer implements IMinimizer {
             if (useCache_ && processCache_.containsKey(resourceNames)) {
                 // !!! cache of the return list instead of minimized file
                 List<String> l = processCache_.get(resourceNames);
-                if (null != l) return l;
+                if (null != l) return new ArrayList<String>(l);
             }
             // CDN items will break the resource name list into
             // separate chunks in order to keep the dependency order
@@ -368,7 +366,7 @@ public class Minimizer implements IMinimizer {
         if (useCache_ && processCache2_.containsKey(resourceNames)) {
             // !!! cache of the return list instead of minimized file
             List<String> l = processCache2_.get(resourceNames);
-            if (null != l) return l;
+            if (null != l) return new ArrayList<String>(l);
         }
         List<String> l = new ArrayList<String>();
         for (String fn : resourceNames) {
@@ -391,6 +389,9 @@ public class Minimizer implements IMinimizer {
                 fn = fn.endsWith(ext) ? fn : fn + ext;
                 l.add(fn);
             }
+        }
+        if (l.isEmpty()) {
+            logger_.warn("Empty resource list found when processing " + resourceNames);
         }
         processCache2_.put(resourceNames, l);
         return l;
@@ -665,13 +666,13 @@ public class Minimizer implements IMinimizer {
                 logger_.warn("error compile less file: " + originalFn + ", error: " + e.getMessage());
             }
         } else {
-            if (file.getName().endsWith(".coffee")) {
-                try {
-                    s = coffee_.compile(fileToString_(file));
-                } catch (JCoffeeScriptCompileException e) {
-                    logger_.error("error compile coffee script file", e);
-                }
-            }
+//            if (file.getName().endsWith(".coffee")) {
+//                try {
+//                    s = coffee_.compile(fileToString_(file));
+//                } catch (JCoffeeScriptCompileException e) {
+//                    logger_.error("error compile coffee script file", e);
+//                }
+//            }
         }
         if (null == s) s = fileToString_(file);
         if (ResourceType.CSS == type_) s = processRelativeUrl_(s, originalFn);
