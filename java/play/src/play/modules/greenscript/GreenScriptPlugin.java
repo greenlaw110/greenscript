@@ -335,7 +335,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         } else {
             
             try {
-                String content = min.processStatic(file.getRealFile());
+                String content = min.processStatic(file.getRealFile(), req.path);
                 resp.contentType = type == ResourceType.JS ? "text/javascript" : "text/css";
                 resp.status = 200;
                 resp.print(content);

@@ -421,10 +421,10 @@ public class Minimizer implements IMinimizer {
     }
 
     @Override
-    public String processStatic(File file) {
+    public String processStatic(File file, String requestPath) {
         String content = null;
         try {
-            content = preprocess_(file, file.getPath());
+            content = preprocess_(file, requestPath);
         } catch (IOException e2) {
             logger_.error("error preprocess static file: " + file.getPath());
             return "";

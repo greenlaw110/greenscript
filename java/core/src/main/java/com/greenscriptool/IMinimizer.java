@@ -263,7 +263,7 @@ public interface IMinimizer extends IProcessor {
      * @param file
      * @return
      */
-    String processStatic(File file);
+    String processStatic(File file, String requestPath);
     
     /**
      * Set file locator
