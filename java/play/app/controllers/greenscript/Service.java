@@ -5,6 +5,7 @@ import java.util.Map;
 import play.modules.greenscript.GreenScriptPlugin;
 import play.mvc.Controller;
 import play.mvc.Http;
+import play.mvc.Scope.Flash;
 
 public class Service extends Controller {
     
@@ -14,6 +15,7 @@ public class Service extends Controller {
         final long l = System.currentTimeMillis();
         final String etag = "\"" + l + "-" + key.hashCode() + "\"";
         response.cacheFor(etag, "100d", l);
+        Flash.current().keep();
         
         Map<String, Http.Header> headers = request.headers;
         if (headers.containsKey("if-none-match") && headers.containsKey("if-modified-since")) {

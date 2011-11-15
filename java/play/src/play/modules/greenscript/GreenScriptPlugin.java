@@ -31,6 +31,7 @@ import play.mvc.Http;
 import play.mvc.Http.Request;
 import play.mvc.Http.Response;
 import play.mvc.Router;
+import play.mvc.Scope.Flash;
 import play.utils.Utils;
 import play.vfs.VirtualFile;
 
@@ -54,6 +55,8 @@ import com.greenscriptool.utils.IBufferLocator;
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/18
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/19
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/21
+ *          fix bug: https://github.com/greenlaw110/greenscript/issues/23
+ *          fix bug: https://github.com/greenlaw110/greenscript/issues/24
  * @version 1.2.5, 2011-08-07
  *          support in-memory cache
  * @version 1.2.1, 2011-01-20 
@@ -63,7 +66,7 @@ import com.greenscriptool.utils.IBufferLocator;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.6k";
+    public static final String VERSION = "1.2.6l";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -264,6 +267,7 @@ public class GreenScriptPlugin extends PlayPlugin {
                 if ("GET".equalsIgnoreCase(request.method)) {
                     response.status = Http.StatusCode.NOT_MODIFIED;
                     response.cacheFor(etag, "100d", l);
+                    keepFlash_();
                     return true;
                 }
             }
@@ -308,6 +312,11 @@ public class GreenScriptPlugin extends PlayPlugin {
 //        return l;
 //    }
     
+    private void keepFlash_() {
+        Flash f = Flash.current();
+        if (f != null) f.keep();
+    }
+    
     private boolean processStatic_(VirtualFile file, Request req, Response resp, ResourceType type) {
         /*
         IRenderSession sess = type == ResourceType.JS ? jsSession() : cssSession();
@@ -328,6 +337,7 @@ public class GreenScriptPlugin extends PlayPlugin {
                 if (eTag_) {
                     resp.setHeader(Names.ETAG, etag);
                 }
+                keepFlash_();
                 return true;
             } else {
                 return false;
@@ -343,6 +353,7 @@ public class GreenScriptPlugin extends PlayPlugin {
                 if (eTag_) {
                     resp.setHeader(Names.ETAG, etag);
                 }
+                keepFlash_();
                 return true;
             } catch (Exception e) {
                 Logger.error(e, "error compress file %1$s", file.getName());

@@ -1,4 +1,4 @@
-self: play -> greenscript 1.2.6k
+self: play -> greenscript 1.2.6l
 
 require:
     - play 1.2

@@ -424,7 +424,7 @@ public class Minimizer implements IMinimizer {
     public String processStatic(File file) {
         String content = null;
         try {
-            content = preprocess_(file, file.getPath());
+            content = preprocess_(file);
         } catch (IOException e2) {
             logger_.error("error preprocess static file: " + file.getPath());
             return "";
@@ -655,6 +655,27 @@ public class Minimizer implements IMinimizer {
     
     private boolean postMergeLessCompile_() {
         return Boolean.valueOf(System.getProperty("greenscript.lessCompile.postMerge", "false"));
+    }
+    
+    private String preprocess_(File file) throws IOException {
+        String s = null;
+        if (lessEnabled_() && !postMergeLessCompile_()) {
+            try {
+                s = compileLess_(file);
+            } catch (LessException e) {
+                logger_.warn("error compile less file: " + file.getName() + ", error: " + e.getMessage());
+            }
+        } else {
+//            if (file.getName().endsWith(".coffee")) {
+//                try {
+//                    s = coffee_.compile(fileToString_(file));
+//                } catch (JCoffeeScriptCompileException e) {
+//                    logger_.error("error compile coffee script file", e);
+//                }
+//            }
+        }
+        if (null == s) s = fileToString_(file);
+        return s;
     }
     
     private String preprocess_(File file, String originalFn) throws IOException {
