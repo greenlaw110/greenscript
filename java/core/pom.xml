@@ -26,6 +26,7 @@
         </license>
     </licenses>
     
+<!-- GS - there is no such repository available, at least I don't see it
     <distributionManagement>
         <repository>
             <id>com.greenscriptool</id>
@@ -33,6 +34,7 @@
             <url>http://greenscriptool.com/repositories/releases</url>
         </repository>
     </distributionManagement>
+-->
     
     <repositories>  
         <repository>  
@@ -72,7 +74,7 @@
             <version>4.8.1</version>
             <scope>test</scope>
         </dependency>
-  </dependencies>
+    </dependencies>
     
     <build>
         <plugins>
@@ -115,38 +117,7 @@
                 <artifactId>maven-install-plugin</artifactId>
                 <version>2.2</version>
             </plugin>
-<!--GS
-			<plugin>
-			    <groupId>org.apache.maven.plugins</groupId>
-			    <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy-dependencies</id>
-            <phase>package</phase>
-            <goals>
-              <goal>copy-dependencies</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/lib</outputDirectory>
-              <overWriteReleases>false</overWriteReleases>
-              <overWriteSnapshots>false</overWriteSnapshots>
-              <overWriteIfNewer>true</overWriteIfNewer>
-            </configuration>
-          </execution>
-        </executions>
-            </plugin>
-GS-->
         </plugins>
-        <testResources>
-            <testResource> <!-- GS?? -->
-                <directory>src/test/resources</directory>
-                <includes>
-                    <include>**/*.properties</include>
-                    <include>**/*.css</include>
-                    <include>**/*.js</include>
-                </includes>
-            </testResource>
-        </testResources>
     </build>
     
 </project>
