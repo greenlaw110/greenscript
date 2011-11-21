@@ -5,11 +5,11 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.greenscriptool</groupId>
+    <groupId>com.github.greenlaw110.greenscript</groupId> <!-- GS -->
     <artifactId>greenscript-core</artifactId>
     <packaging>jar</packaging>
     <name>GreenScript Core</name>
-    <version>1.2.6l</version>
+    <version>1.2.7-SNAPSHOT</version>
     <description>A Java package to manage and process Web Resources (Javascript/CSS)</description>
     <url>http://github.com/greenlaw110/greenscript</url>
     
@@ -34,62 +34,44 @@
         </repository>
     </distributionManagement>
     
+    <repositories>  
+        <repository>  
+            <id>com.asual.maven.public</id>  
+            <name>Asual Public Repository</name>  
+            <url>http://www.asual.com/maven/content/groups/public</url>  
+        </repository>  
+    </repositories>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
     
     <dependencies>
-        <!--
         <dependency>
-            <groupId>com.yahoo.platform.yui</groupId>
-            <artifactId>yuicompressor</artifactId>
-            <version>2.4.2</version>
+            <groupId>com.asual.lesscss</groupId>
+            <artifactId>lesscss-engine</artifactId>
+            <version>1.1.4</version>
         </dependency>
-        -->
+
         <dependency>
             <groupId>com.yahoo.platform.yui</groupId>
             <artifactId>yuicompressor</artifactId>
             <version>2.4.6</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/yuicompressor-2.4.6.jar</systemPath>
         </dependency>
+
         <dependency>
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
             <version>1</version>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>com.asual.lesscss</groupId>
-            <artifactId>lesscss</artifactId>
-            <version>1.1.4</version>
-        </dependency>
-        -->
-        <dependency>
-            <groupId>com.asual.lesscss</groupId>
-            <artifactId>lesscss</artifactId>
-            <version>1.1.4</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/lesscss-engine-1.1.4.jar</systemPath>
-        </dependency>
-        
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>1.1.1</version>
-        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.7</version>
+            <version>4.8.1</version>
             <scope>test</scope>
         </dependency>
-		<dependency>
-			<groupId>com.google.javascript</groupId>
-			<artifactId>closure-compiler</artifactId>
-			<version>r606</version>
-		</dependency>
   </dependencies>
     
     <build>
@@ -133,6 +115,7 @@
                 <artifactId>maven-install-plugin</artifactId>
                 <version>2.2</version>
             </plugin>
+<!--GS
 			<plugin>
 			    <groupId>org.apache.maven.plugins</groupId>
 			    <artifactId>maven-dependency-plugin</artifactId>
@@ -152,9 +135,10 @@
           </execution>
         </executions>
             </plugin>
+GS-->
         </plugins>
         <testResources>
-            <testResource>
+            <testResource> <!-- GS?? -->
                 <directory>src/test/resources</directory>
                 <includes>
                     <include>**/*.properties</include>
