@@ -171,8 +171,10 @@ public class Minimizer implements IMinimizer {
 
     @Override
     public void setCacheDir(File dir) {
-        if (!dir.isDirectory() && !dir.mkdir())
-            throw new IllegalArgumentException("not a dir");
+        // comment below as inmemory configuration does not require dir to be exists
+        // this is relevant when deploy app on readonly file system like heroku and gae
+//        if (!dir.isDirectory() && !dir.mkdir())
+//            throw new IllegalArgumentException("not a dir");
         checkInitialize_(false);
         cache_ = new FileCache(dir);
     }
@@ -250,7 +252,7 @@ public class Minimizer implements IMinimizer {
         bl_ = bufferLocator;
     }
     
-    private static final Pattern P_IMPORT = Pattern.compile(".*@import\\s*\"(.*?)\".*"); 
+    private static final Pattern P_IMPORT = Pattern.compile("^@import\\s*\"(.*?)\".*"); 
     private Map<String, Set<File>> importsCache_ = new HashMap<String, Set<File>>();
     private Set<File> imports_(File file) {
         String key = "less_imports_" + file.getPath() + file.lastModified();

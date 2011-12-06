@@ -55,8 +55,10 @@ import com.greenscriptool.utils.IBufferLocator;
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/18
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/19
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/21
+ *          fix bug: https://github.com/greenlaw110/greenscript/issues/22
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/23
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/24
+ *          fix bug: https://github.com/greenlaw110/greenscript/issues/27
  * @version 1.2.5, 2011-08-07
  *          support in-memory cache
  * @version 1.2.1, 2011-01-20 
@@ -66,7 +68,7 @@ import com.greenscriptool.utils.IBufferLocator;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.6l";
+    public static final String VERSION = "1.2.6m";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -138,10 +140,11 @@ public class GreenScriptPlugin extends PlayPlugin {
         if (inMemoryCache) {
             String url = cacheUrlPath_();
             Router.addRoute(0, "GET", 
-                    url + "/{key}", 
+                    url + "{key}", 
                     "greenscript.Service.getInMemoryCache",
                     null,
                     null);
+            Logger.debug("route added: %s handled by %s", url + "{key}", "greenscript.Service.getInMemoryCache");
         } else {
             stopRouteUpdate_ = true;
             Router.load(Play.ctxPath);
