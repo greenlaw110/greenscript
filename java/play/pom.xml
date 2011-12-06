@@ -59,7 +59,7 @@ under the License.
     <properties>
         <play.manifest.section>Play</play.manifest.section>
         <manifest.specification.title>greenscript module</manifest.specification.title>
-        <module.frameworkVersions>1.2</module.frameworkVersions>
+        <play.module.frameworkVersions>1.2</play.module.frameworkVersions>
 
         <play.version>1.2</play.version>
     </properties>
@@ -109,63 +109,8 @@ under the License.
         <profile>
             <id>compile-app</id>
 
-            <dependencies>
-                <dependency>
-                    <groupId>com.google.code.maven-play-plugin.org.playframework.modules.secure</groupId>
-                    <artifactId>play-secure</artifactId>
-                    <version>${play.version}</version>
-                    <type>zip</type>
-                    <classifier>module-min</classifier>
-                    <scope>provided</scope>
-                </dependency>
-            </dependencies>
-
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <version>2.3</version>
-                        <executions>
-                            <execution>
-                                <id>unpack-secure-module</id>
-                                <phase>validate</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>com.google.code.maven-play-plugin.org.playframework.modules.secure</groupId>
-                                            <artifactId>play-secure</artifactId>
-                                            <version>${play.version}</version>
-                                            <type>zip</type>
-                                            <classifier>module-min</classifier>
-                                            <outputDirectory>${basedir}/modules/secure-${play.version}</outputDirectory>
-                                        </artifactItem>
-                                    </artifactItems>
-                                    <silent>true</silent>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>build-helper-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>add-app-source</id>
-                                <configuration>
-                                    <sources>
-                                        <source>${basedir}/app</source>
-                                        <source>${basedir}/modules/secure-${play.version}/app</source>
-                                    </sources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-jar-plugin</artifactId>
@@ -191,10 +136,9 @@ under the License.
                             <execution>
                                 <id>make-assembly</id>
                                 <configuration>
+                                    <appendAssemblyId>false</appendAssemblyId>
                                     <descriptors>
                                         <descriptor>${basedir}/assembly-dist.xml</descriptor>
-                                        <!--temp<descriptor>${basedir}/assembly-module.xml</descriptor>
-                                        <descriptor>${basedir}/assembly-module-min.xml</descriptor>-->
                                     </descriptors>
                                 </configuration>
                             </execution>
