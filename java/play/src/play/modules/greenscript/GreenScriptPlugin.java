@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -617,8 +618,13 @@ public class GreenScriptPlugin extends PlayPlugin {
             return Cache.get(key_(key), BufferResource.class);
         }
         @Override
-        public BufferResource newBuffer(String extension) {
-            String key = UUID.randomUUID().toString() + extension;
+        public BufferResource newBuffer(List<String> resourceNames, String extension) {
+        	StringBuilder builder = new StringBuilder();
+        	for (String resourceName : resourceNames) {
+        		builder.append(resourceName);
+			}
+        	
+            String key = UUID.nameUUIDFromBytes(builder.toString().getBytes()).toString() + extension;
             BufferResource buffer = new BufferResource(key);
             Cache.set(key_(key), buffer);
             return buffer;

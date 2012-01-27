@@ -477,7 +477,7 @@ public class Minimizer implements IMinimizer {
             }
         }
 
-        IResource rsrc = newCache_();
+        IResource rsrc = newCache_(resourceNames);
         Writer out = rsrc.getWriter();
         StringWriter sw = new StringWriter();
         try {
@@ -763,9 +763,9 @@ public class Minimizer implements IMinimizer {
         copy_(new StringReader(s), out);
     }
 
-    private IResource newCache_() {
+    private IResource newCache_(List<String> resourceNames) {
         if (inMemory_) {
-            return bl_.newBuffer(type_.getExtension());
+            return bl_.newBuffer(resourceNames, type_.getExtension());
         } else {
             return new FileResource(newCacheFile_());
         }
