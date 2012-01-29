@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <project name="greenscript" default="build" basedir=".">
+	
+	<property file="./build.properties" />
 
     <target name="check" unless="play.path">
         <fail message="Please specify Play framework path using -Dplay.path=/path/to/framework/home" />

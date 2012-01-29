@@ -10,7 +10,7 @@ import play.mvc.Scope.Flash;
 public class Service extends Controller {
     
     public static void getInMemoryCache(String key) {
-        String content = GreenScriptPlugin.getInstance().getInMemoryFileContent(key);
+        String content = GreenScriptPlugin.getInstance().getInMemoryFileContent(key, params.get(GreenScriptPlugin.RESOURCES_PARAM));
         notFoundIfNull(content);
         final long l = System.currentTimeMillis();
         final String etag = "\"" + l + "-" + key.hashCode() + "\"";

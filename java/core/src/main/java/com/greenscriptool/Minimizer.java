@@ -8,7 +8,9 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,6 +25,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -53,6 +56,7 @@ public class Minimizer implements IMinimizer {
     private String resourceUrlRoot_ = null;
     private String resourceUrlPath_ = null;
     private String cacheUrlPath_ = null;
+    private String resourcesParam_ = null;
 
     private ICompressor compressor_;
     private ResourceType type_;
@@ -464,19 +468,12 @@ public class Minimizer implements IMinimizer {
     private String compileLess_(File f) throws LessException {
         return less_.compile(f).replace("\\n", "\n");
     }
-
-    private String minimize_(List<String> resourceNames) {
-        FileCache cache = cache_;
-
-        if (useCache_) {
-            String fn = cache.get(resourceNames);
-            if (null != fn) {
-                if (logger_.isDebugEnabled())
-                    logger_.debug("cached file returned: " + fn);
-                return cacheUrlPath_ + fn;
-            }
-        }
-
+    
+    public IResource minimize(String resourceNames) {
+    	return minimize(decodeResourceNames(resourceNames));
+    }
+    
+    private IResource minimize(List<String> resourceNames) {
         IResource rsrc = newCache_(resourceNames);
         Writer out = rsrc.getWriter();
         StringWriter sw = new StringWriter();
@@ -529,13 +526,89 @@ public class Minimizer implements IMinimizer {
                 }
             }
         }
+        
+        return rsrc;
+    }
+
+    private String minimize_(List<String> resourceNames) {
+        FileCache cache = cache_;
+
+        if (useCache_) {
+            String fn = cache.get(resourceNames);
+            if (null != fn) {
+                if (logger_.isDebugEnabled())
+                    logger_.debug("cached file returned: " + fn);
+                return cacheUrlPath_ + fn;
+            }
+        }
+
+        IResource rsrc = minimize(resourceNames);
+
         String fn = rsrc.getKey();
         // filename always cached without regarding to cache setting
         // this is a good time to remove previous file
         // Note it's absolutely not a good idea to turn cache off
         // and minimize on in a production environment
         cache.put(resourceNames, fn);
-        return cacheUrlPath_ + fn;
+        
+        try {
+        	StringBuilder builder = new StringBuilder();
+        	builder.append(cacheUrlPath_);
+        	builder.append(fn);
+        	
+        	if (this.resourcesParam_ != null) {
+        		String resourcesParamValue = this.encodeResourceNames(resourceNames);
+        		if (resourcesParamValue != null) {
+        			builder.append("?");
+        			builder.append(this.resourcesParam_);
+        			builder.append("=");
+        			builder.append(URLEncoder.encode(resourcesParamValue, "utf8"));
+        		}
+        	}
+			return builder.toString();
+		} catch (UnsupportedEncodingException e) {
+			throw new IllegalStateException(e);
+		}
+    }
+    
+    private String encodeResourceNames(List<String> resourceNames) {
+    	StringBuilder builder = new StringBuilder();
+    	for (String resourceName : resourceNames) {
+    		resourceName = StringUtils.stripToNull(resourceName);
+    		if (resourceName != null) {
+	    		if (builder.length() > 0) {
+	    			builder.append(',');
+	    		}
+				if (resourceName.startsWith(resourceUrlPath_)) {
+					resourceName = resourceName.substring(resourceUrlPath_.length());
+				}
+				builder.append(resourceName);
+    		}
+		}
+    	return (builder.length() > 0) ? builder.toString() : null;
+    }
+    
+    private List<String> decodeResourceNames(String resourceNames) {
+    	String[] names = resourceNames.split("[,]");
+    	if (names.length == 0) {
+    		return Collections.emptyList();
+    	}
+
+    	List<String> l = new ArrayList<String>(names.length);
+    	
+		for (String name : names) {
+			name = StringUtils.stripToNull(name);
+			if (name != null) {
+				if (!name.startsWith("/")) {
+					name = resourceUrlPath_ + name;
+				}
+				if (!l.contains(name)) {
+					l.add(name);
+				}
+			}
+		}
+    	
+		return l;
     }
 
     public static final String SYS_PROP_LESS_ENABLED = "greenscript.less.enabled";
@@ -797,5 +870,9 @@ public class Minimizer implements IMinimizer {
         Matcher m = P_CDN_PREFIX.matcher(resourceName);
         return m.find();
     }
+
+	public void setResourcesParam(String resourcesParam_) {
+		this.resourcesParam_ = resourcesParam_;
+	}
 
 }

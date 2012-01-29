@@ -3,6 +3,7 @@ package play.modules.greenscript;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -41,6 +42,7 @@ import com.greenscriptool.IDependenceManager;
 import com.greenscriptool.IFileLocator;
 import com.greenscriptool.IMinimizer;
 import com.greenscriptool.IRenderSession;
+import com.greenscriptool.IResource;
 import com.greenscriptool.Minimizer;
 import com.greenscriptool.RenderSession;
 import com.greenscriptool.ResourceType;
@@ -96,6 +98,8 @@ public class GreenScriptPlugin extends PlayPlugin {
     
     private boolean eTag_ = false;
     
+    public static final String RESOURCES_PARAM = "resources";
+    
     private static Properties defProps_; static {
         defProps_ = new Properties();
         // file paths
@@ -118,6 +122,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         defProps_.setProperty("greenscript.js.cache.check", "10s");
         defProps_.setProperty("greenscript.css.cache.check", "10s");
         defProps_.setProperty("greenscript.lessCompile.postMerge", "false");
+        defProps_.setProperty("greenscript.resources.param.enabled", "false");
     }
     
     public GreenScriptPlugin() {
@@ -587,6 +592,9 @@ public class GreenScriptPlugin extends PlayPlugin {
         m.setCacheDir(Play.getFile(cacheDir));
         m.setResourceDir(resourceDir);
         
+        boolean resourcesParameter = getBooleanProp_(p, "greenscript.resources.param.enabled", false);
+        m.setResourcesParam(resourcesParameter ? RESOURCES_PARAM : null);
+        
         boolean minimize = getBooleanProp_(p, "greenscript.minimize", Play.mode == Mode.PROD);
         boolean compress = getBooleanProp_(p, "greenscript.compress", true);
         boolean cache = getBooleanProp_(p, "greenscript.cache", true);
@@ -604,9 +612,22 @@ public class GreenScriptPlugin extends PlayPlugin {
         return m;
     }
     
-    public String getInMemoryFileContent(String key) {
-        BufferResource br = bufferLocator_.locate(key);
-        return null == br ? null : br.toString();
+    public String getInMemoryFileContent(String key, String resourceNames) {
+        IResource resource = bufferLocator_.locate(key);
+        
+        if (resource == null && resourceNames != null) {
+        	Minimizer minimizer = null;
+        	// Select the minimizer.
+        	if (key.endsWith(".js")) {
+        		minimizer = jsM_;
+        	} else if (key.endsWith(".css")) {
+        		minimizer = cssM_;
+        	}
+            
+        	resource = minimizer.minimize(resourceNames);
+        }
+        
+        return null == resource ? null : resource.toString();
     }
     
     private IBufferLocator bufferLocator_ = new IBufferLocator() {
@@ -625,6 +646,9 @@ public class GreenScriptPlugin extends PlayPlugin {
 			}
         	
             String key = UUID.nameUUIDFromBytes(builder.toString().getBytes()).toString() + extension;
+            
+            Logger.trace("Created key '%s' from resources '%s' and extension '%s'", key, builder.toString(), extension);
+            
             BufferResource buffer = new BufferResource(key);
             Cache.set(key_(key), buffer);
             return buffer;
