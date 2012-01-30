@@ -256,7 +256,7 @@ public class Minimizer implements IMinimizer {
         bl_ = bufferLocator;
     }
     
-    private static final Pattern P_IMPORT = Pattern.compile("^@import\\s*\"(.*?)\".*"); 
+    private static final Pattern P_IMPORT = Pattern.compile("^\\s*@import\\s*\"(.*?)\".*");
     private Map<String, Set<File>> importsCache_ = new HashMap<String, Set<File>>();
     private Set<File> imports_(File file) {
         String key = "less_imports_" + file.getPath() + file.lastModified();
