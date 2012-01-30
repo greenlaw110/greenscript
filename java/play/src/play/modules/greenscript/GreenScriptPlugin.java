@@ -53,6 +53,9 @@ import com.greenscriptool.utils.IBufferLocator;
  * Define a Playframework plugin
  * 
  * @author greenlaw110@gmail.com
+ * @version 1.2.7 2012-01-31
+ *          fix bug: https://github.com/greenlaw110/greenscript/issues/30
+ *          Add tags for rythm engine
  * @version 1.2.6, 2011-09-04
  *          support LESS, 
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/18
@@ -71,7 +74,7 @@ import com.greenscriptool.utils.IBufferLocator;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.6m";
+    public static final String VERSION = "1.2.7";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",

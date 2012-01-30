@@ -1,0 +1,10 @@
+@args String nameList, Object output, boolean all, boolean deps, String media, String browser, String id, String charset, int priority;
+
+@{
+if (null == nameList) nameList = _getAs("arg", String.class);
+String cacheKey = nameList + output + all + deps + media + browser + id + charset + priority;
+}@
+
+@cacheOnProd(cacheKey, "1h") <<
+@greenscript.gs_(nameList = nameList, output = output, all = all, deps = deps, media = media, browser = browser, id = id, charset = charset, priority = priority, type = "js")
+@

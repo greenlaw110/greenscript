@@ -1,0 +1,47 @@
+@import play.modules.greenscript.GreenScriptPlugin;
+@args String nameList, Object output, boolean all, boolean deps, String media, String browser, String id, String charset, int priority = 0, String type;
+        @{
+            final com.greenscriptool.RenderSession sm = (com.greenscriptool.RenderSession)GreenScriptPlugin.session(type);
+            if (null != nameList) {
+                sm.declare(nameList, media, browser);
+            }
+        _logger.info("aaa");
+
+            all = all || "all".equals(output);
+            deps = deps || "deps".equals(output);
+
+            boolean _output = all || deps || ((null != output) && ((output instanceof Boolean) ? (Boolean)output : !"false".equals(output.toString())));
+        }@
+
+        @if (_output)
+            @if (all)
+                @// default browser with default media
+                @greenscript.output_(nameList, deps = deps, all = all, media = null, browser = null, id = id, charset = charset, type = type, sm = sm)
+
+                @// default browser with non-default media
+                @each String med: sm.getMedias(null)
+                    @greenscript.output_(nameList, deps = deps, all = all, media = med, browser = null, id = id, charset = charset, type = type, sm = sm)
+                @
+
+                @// non-default browsers
+                @each String bro: sm.getBrowsers()
+                    @each String med: sm.getMedias(bro)
+                        @greenscript.output_(nameList, deps = deps, all = all, media = med, browser = bro, id = id, charset = charset, type = type, sm = sm)
+                    @
+                @
+            @ else
+                @greenscript.output_(nameList, deps = deps, all = all, media = media, browser = browser, id = id, charset = charset, type = type, sm = sm)
+            @
+        @
+
+        @// handle inline code
+
+        @if (null != _body)
+            @if (_output)
+                @greenscript.openTag_(type)
+                @_body.build()
+                @greenscript.closeTag_(type)
+            @ else
+                @{ sm.declareInline(_body.toString(), priority); }@
+            @
+        @
