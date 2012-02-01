@@ -39,7 +39,7 @@
         @if (null != _body)
             @if (_output)
                 @greenscript.openTag_(type)
-                @_body.build()
+                @_body
                 @greenscript.closeTag_(type)
             @ else
                 @{ sm.declareInline(_body.toString(), priority); }@

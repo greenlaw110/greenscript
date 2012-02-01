@@ -16,6 +16,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 
@@ -34,6 +35,7 @@ import play.mvc.Http.Request;
 import play.mvc.Http.Response;
 import play.mvc.Router;
 import play.mvc.Scope.Flash;
+import play.templates.Template;
 import play.utils.Utils;
 import play.vfs.VirtualFile;
 
@@ -89,6 +91,10 @@ public class GreenScriptPlugin extends PlayPlugin {
         Logger.trace(msg_(msg, args));
     }
 
+    private static void debug_(String msg, Object... args) {
+        Logger.info(msg_(msg, args));
+    }
+
     private Minimizer jsM_;
     private Minimizer cssM_;
     private IDependenceManager jsD_;
@@ -100,6 +106,8 @@ public class GreenScriptPlugin extends PlayPlugin {
     private HashMap<String, Long> configFiles_;
     
     private boolean eTag_ = false;
+    
+    private boolean rythmPresented_ = false;
     
     public static final String RESOURCES_PARAM = "resources";
     
@@ -133,7 +141,19 @@ public class GreenScriptPlugin extends PlayPlugin {
         minConf_ = new Properties();
         minConf_.putAll(defProps_);
     }
-    
+
+    @Override
+    public void onLoad() {
+        try {
+            Class.forName("com.greenlaw110.rythm.play.RythmPlugin");
+            rythmPresented_ = true;
+            debug_("rythm presented");
+        } catch (Exception e) {
+            // rythm template engine not presented.
+            debug_("rythm not presented");
+        }
+    }
+
     @Override
     public void onConfigurationRead() {
         
@@ -190,7 +210,32 @@ public class GreenScriptPlugin extends PlayPlugin {
             }
         }
     }
-    
+
+    /*
+     * provided here to avoid compilation error when Rythm Template Engine is not presented
+     */
+    private static final Template VOID_RYTHM_TMPL = new Template() {
+        @Override
+        public void compile() {
+        }
+
+        @Override
+        protected String internalRender(Map<String, Object> args) {
+            return null;
+        }
+    };
+
+    private final Pattern P = Pattern.compile(".*tags.rythm.greenscript.*");
+    @Override
+    public Template loadTemplate(VirtualFile file) {
+        if (rythmPresented_) return null; // let rythm to handle it
+        if (!file.exists()) return null;
+        if (P.matcher(file.relativePath()).matches()) {
+            return VOID_RYTHM_TMPL;
+        }
+        return null;
+    }
+
     @Override
     public void onApplicationStop() {
         cleanUp_();
@@ -770,6 +815,8 @@ public class GreenScriptPlugin extends PlayPlugin {
 /*
  * History
  * -----------------------------------------------------------
+ * 1.2.7
+ *  - support cluster (like heroku), support rythm template engine
  * 1.2.6
  *  - support LESS, E-Tag and Last-Modified http header
  * 1.2.5:
