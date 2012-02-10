@@ -1,7 +1,4 @@
+#{verbatim}
 @args String type
-
-        @if ("js".equalsIgnoreCase(type))
-            <script type="text/javascript">
-        @ else if ("css".equalsIgnoreCase(type))
-            <style type="text/css">
-        @
+@("js".equalsIgnoreCase(type) ? "<script type=\"text/javascript\">" : ("css".equalsIgnoreCase(type) ? "<style type=\"text/css\">" : "" ))
+#{/verbatim}

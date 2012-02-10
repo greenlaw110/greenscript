@@ -17,5 +17,5 @@
 
 @{ String inline = all ? sm.outputInline().trim() : null; }@
 @if (null != inline && !"".equals(inline))
-    @greenscript.openTag_(type) @inline.raw() @greenscript.closeTag_(type)
+    @greenscript.openTag_(type) @inline @greenscript.closeTag_(type)
 @
