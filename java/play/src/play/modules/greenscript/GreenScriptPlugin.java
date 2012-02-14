@@ -25,6 +25,7 @@ import play.Play;
 import play.Play.Mode;
 import play.PlayPlugin;
 import play.cache.Cache;
+import play.exceptions.NoRouteFoundException;
 import play.exceptions.UnexpectedException;
 import play.jobs.Job;
 import play.jobs.JobsPlugin;
@@ -36,6 +37,8 @@ import play.mvc.Http.Response;
 import play.mvc.Router;
 import play.mvc.Scope.Flash;
 import play.templates.Template;
+import play.mvc.results.NotFound;
+import play.mvc.results.RenderStatic;
 import play.utils.Utils;
 import play.vfs.VirtualFile;
 
@@ -45,6 +48,7 @@ import com.greenscriptool.IFileLocator;
 import com.greenscriptool.IMinimizer;
 import com.greenscriptool.IRenderSession;
 import com.greenscriptool.IResource;
+import com.greenscriptool.IRouteMapper;
 import com.greenscriptool.Minimizer;
 import com.greenscriptool.RenderSession;
 import com.greenscriptool.ResourceType;
@@ -621,6 +625,37 @@ public class GreenScriptPlugin extends PlayPlugin {
             }
         });
         m.setBufferLocator(bufferLocator_);
+        
+        m.setRouteMapper(new IRouteMapper() {
+			@Override
+			public String reverse(String fileName) {
+				try {
+					String url = Router.reverseWithCheck(fileName, Play.getVirtualFile(fileName), false);
+					if (fileName.endsWith("/") && !url.endsWith("/")) {
+						url = url + "/";
+					}
+					return url;
+				} catch (NoRouteFoundException e) {
+					return fileName;
+				}
+			}
+
+			@Override
+			public String route(String url) {
+				try {
+					Map<String, String> args = Router.route("GET", url);
+					return args.get("action");
+				} catch (RenderStatic rs) {
+					String fileName = rs.file;
+					if (url.startsWith("/") && !fileName.startsWith("/")) {
+						fileName = "/" + fileName;
+					}
+					return fileName;
+				} catch (NotFound ex) {
+					return url;
+				}
+			}
+		});
 
         String ext = type.getExtension();
         String rootDir = fetchProp_(p, "greenscript.dir.root");
