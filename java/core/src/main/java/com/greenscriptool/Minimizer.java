@@ -256,6 +256,15 @@ public class Minimizer implements IMinimizer {
         bl_ = bufferLocator;
     }
     
+    private IRouteMapper rm_ = null;
+    
+    @Override
+    public void setRouteMapper(IRouteMapper routeMapper) {
+        if (null == routeMapper)
+            throw new NullPointerException();
+        rm_ = routeMapper;
+    }    
+    
     private static final Pattern P_IMPORT = Pattern.compile("^\\s*@import\\s*\"(.*?)\".*");
     private Map<String, Set<File>> importsCache_ = new HashMap<String, Set<File>>();
     private Set<File> imports_(File file) {
@@ -299,7 +308,7 @@ public class Minimizer implements IMinimizer {
         for(List<String> l: processCache_.keySet()) {
             for (String s: l) {
                 if (isCDN_(s)) continue;
-                File f = getFile_(s);
+                File f = getFileFromURL_(s);
                 if (null != f && f.exists()) {
                     long ts1 = getLastModified(f);
                     long ts2 = lastModifiedCache_.get(f);
@@ -384,15 +393,18 @@ public class Minimizer implements IMinimizer {
                 if (s.equalsIgnoreCase("default")
                         || s.endsWith(IDependenceManager.BUNDLE_SUFFIX)) {
                     continue;
-                } else {
-                    f = getFile_(fn);
-                    if (null == f || !f.isFile()) {
-                        continue;
-                    }
                 }
-                fn = getUrl_(fn);
+                
+                f = getFile_(fn);
+                if (null == f || !f.isFile()) {
+                    continue;
+                }
+                
                 String ext = getExtension_(f.getName());
                 fn = fn.endsWith(ext) ? fn : fn + ext;
+                
+                fn = getUrl_(fn);
+
                 l.add(fn);
             }
         }
@@ -480,15 +492,16 @@ public class Minimizer implements IMinimizer {
         try {
             for (String s : resourceNames) {
                 // if (s.startsWith("http:")) l.add(s);
-                if (isCDN_(s))
+                if (isCDN_(s)) {
                     throw new IllegalArgumentException(
                             "CDN resource not expected in miminize method");
-                else {
-                    File f = getFile_(s);
-                    if (null != f && f.exists())
-                        merge_(f, sw, s);
-                    else
-                        ; // possibly a pseudo or error resource name
+                }
+                
+                File f = getFileFromURL_(s);
+                if (null != f && f.exists()) {
+                    merge_(f, sw, s);
+                } else {
+                    // possibly a pseudo or error resource name
                 }
             }
             String s = sw.toString();
@@ -633,12 +646,16 @@ public class Minimizer implements IMinimizer {
     private String processRelativeUrl_(String s, String fn) throws IOException {
         if (ResourceType.CSS != type_)
             throw new IllegalStateException("not a css minimizer");
+        
+        if (this.rm_ != null) {
+        	fn = this.rm_.route(fn);
+        }
 
         /*
          * Process fn: .../a.* -> .../
          */
         int p = fn.lastIndexOf("/") + 1;
-        fn = 0 == p ? resourceUrlPath_ : fn.substring(0, p);
+        fn = (0 == p) ? resourceUrlPath_ : fn.substring(0, p);
 
         String prefix;
         if (fn.startsWith("/")) {
@@ -648,6 +665,11 @@ public class Minimizer implements IMinimizer {
         } else {
             prefix = resourceUrlPath_ + fn;
         }
+        
+        if (this.rm_ != null) {
+        	prefix = this.rm_.reverse(prefix);
+        }
+        
         try {
             Matcher m = P_URL.matcher(s);
             s = m.replaceAll("url(" + prefix + "$1)");
@@ -776,15 +798,27 @@ public class Minimizer implements IMinimizer {
     }
     
     private String getUrl_(String resourceName) {
-        if (!"".equals(ctxPath_) && resourceName.startsWith(ctxPath_)) return resourceName;
-        if (resourceName.startsWith("/")) {
+    	String url = null;
+    	
+        if (!"".equals(ctxPath_) && resourceName.startsWith(ctxPath_)) {
+        	url = resourceName;
+        } else if (resourceName.startsWith("/")) {
             String s = ctxPath_ + resourceName;
-            if (s.startsWith(resourceUrlRoot_)) return s;
-            else return resourceUrlRoot_ + resourceName.substring(1, resourceName.length());
+            if (s.startsWith(resourceUrlRoot_)) {
+            	url = s;
+            } else {
+            	url = resourceUrlRoot_ + resourceName.substring(1, resourceName.length());
+            }
         } else {
-            return resourceUrlPath_ + resourceName;
+            url = resourceUrlPath_ + resourceName;
         }
+        
+        return (this.rm_ != null) ? this.rm_.reverse(url) : url;
     }
+    
+	private File getFileFromURL_(String url) {
+		return this.getFile_((this.rm_ != null) ? this.rm_.route(url) : url);
+	}
 
     private File getFile_(String resourceName) {
         if (resourceName.startsWith("/") && !resourceName.startsWith(ctxPath_)) {

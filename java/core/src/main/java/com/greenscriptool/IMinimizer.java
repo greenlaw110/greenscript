@@ -271,5 +271,13 @@ public interface IMinimizer extends IProcessor {
      */
     void setFileLocator(IFileLocator fileLocator);
     
+    /**
+     * @param bufferLocator
+     */
     void setBufferLocator(IBufferLocator bufferLocator);
+    
+    /**
+     * @param routeMapper
+     */
+    void setRouteMapper(IRouteMapper routeMapper);
 }
