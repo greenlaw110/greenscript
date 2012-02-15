@@ -626,36 +626,40 @@ public class GreenScriptPlugin extends PlayPlugin {
         });
         m.setBufferLocator(bufferLocator_);
         
-        m.setRouteMapper(new IRouteMapper() {
-			@Override
-			public String reverse(String fileName) {
-				try {
-					String url = Router.reverseWithCheck(fileName, Play.getVirtualFile(fileName), false);
-					if (fileName.endsWith("/") && !url.endsWith("/")) {
-						url = url + "/";
+        boolean routerMapping = getBooleanProp_(p, "greenscript.router.mapping", false);
+        
+        if (routerMapping) {
+	        m.setRouteMapper(new IRouteMapper() {
+				@Override
+				public String reverse(String fileName) {
+					try {
+						String url = Router.reverseWithCheck(fileName, Play.getVirtualFile(fileName), false);
+						if (fileName.endsWith("/") && !url.endsWith("/")) {
+							url = url + "/";
+						}
+						return url;
+					} catch (NoRouteFoundException e) {
+						return fileName;
 					}
-					return url;
-				} catch (NoRouteFoundException e) {
-					return fileName;
 				}
-			}
-
-			@Override
-			public String route(String url) {
-				try {
-					Map<String, String> args = Router.route("GET", url);
-					return args.get("action");
-				} catch (RenderStatic rs) {
-					String fileName = rs.file;
-					if (url.startsWith("/") && !fileName.startsWith("/")) {
-						fileName = "/" + fileName;
+	
+				@Override
+				public String route(String url) {
+					try {
+						Map<String, String> args = Router.route("GET", url);
+						return args.get("action");
+					} catch (RenderStatic rs) {
+						String fileName = rs.file;
+						if (url.startsWith("/") && !fileName.startsWith("/")) {
+							fileName = "/" + fileName;
+						}
+						return fileName;
+					} catch (NotFound ex) {
+						return url;
 					}
-					return fileName;
-				} catch (NotFound ex) {
-					return url;
 				}
-			}
-		});
+			});
+        }
 
         String ext = type.getExtension();
         String rootDir = fetchProp_(p, "greenscript.dir.root");
