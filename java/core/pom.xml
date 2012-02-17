@@ -37,6 +37,14 @@
 -->
     
     <repositories>  
+        <repository>
+            <id>com.google.code.maven-play-plugin</id>
+            <name>Maven Play Plugin - releases</name>
+            <url>http://maven-play-plugin.googlecode.com/svn/mavenrepo/releases</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
         <repository>  
             <id>com.asual.maven.public</id>  
             <name>Asual Public Repository</name>  
