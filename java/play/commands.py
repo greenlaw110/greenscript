@@ -31,6 +31,15 @@ if play_command is None:
                     for f in ('js.html', 'css.html'):
                         app.override('%s/%s' % (fromDir, f), '%s/%s' % (toDir, f))
                     print "~ "
+                    # copy rythm tags
+                    if a == '.':
+                        toDir = 'app/views/tags/rythm'
+                    else:
+                        toDir = 'app/views/tags/rythm/%s' % a
+                    fromDir = 'app/views/tags/rythm/greenscript'
+                    for f in ('js.html', 'css.html'):
+                        app.override('%s/%s' % (fromDir, f), '%s/%s' % (toDir, f))
+                    print "~ "
                     return
                     
                 if o in ('-t', '--template'):

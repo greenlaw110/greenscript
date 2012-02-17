@@ -3,17 +3,20 @@ package play.modules.greenscript;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 
@@ -22,6 +25,7 @@ import play.Play;
 import play.Play.Mode;
 import play.PlayPlugin;
 import play.cache.Cache;
+import play.exceptions.NoRouteFoundException;
 import play.exceptions.UnexpectedException;
 import play.jobs.Job;
 import play.jobs.JobsPlugin;
@@ -32,6 +36,9 @@ import play.mvc.Http.Request;
 import play.mvc.Http.Response;
 import play.mvc.Router;
 import play.mvc.Scope.Flash;
+import play.templates.Template;
+import play.mvc.results.NotFound;
+import play.mvc.results.RenderStatic;
 import play.utils.Utils;
 import play.vfs.VirtualFile;
 
@@ -40,6 +47,8 @@ import com.greenscriptool.IDependenceManager;
 import com.greenscriptool.IFileLocator;
 import com.greenscriptool.IMinimizer;
 import com.greenscriptool.IRenderSession;
+import com.greenscriptool.IResource;
+import com.greenscriptool.IRouteMapper;
 import com.greenscriptool.Minimizer;
 import com.greenscriptool.RenderSession;
 import com.greenscriptool.ResourceType;
@@ -50,6 +59,9 @@ import com.greenscriptool.utils.IBufferLocator;
  * Define a Playframework plugin
  * 
  * @author greenlaw110@gmail.com
+ * @version 1.2.7 2012-01-31
+ *          fix bug: https://github.com/greenlaw110/greenscript/issues/30
+ *          Add tags for rythm engine
  * @version 1.2.6, 2011-09-04
  *          support LESS, 
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/18
@@ -68,7 +80,7 @@ import com.greenscriptool.utils.IBufferLocator;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.6m";
+    public static final String VERSION = "1.2.7";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -83,6 +95,10 @@ public class GreenScriptPlugin extends PlayPlugin {
         Logger.trace(msg_(msg, args));
     }
 
+    private static void debug_(String msg, Object... args) {
+        Logger.info(msg_(msg, args));
+    }
+
     private Minimizer jsM_;
     private Minimizer cssM_;
     private IDependenceManager jsD_;
@@ -94,6 +110,10 @@ public class GreenScriptPlugin extends PlayPlugin {
     private HashMap<String, Long> configFiles_;
     
     private boolean eTag_ = false;
+    
+    private boolean rythmPresented_ = false;
+    
+    public static final String RESOURCES_PARAM = "resources";
     
     private static Properties defProps_; static {
         defProps_ = new Properties();
@@ -117,6 +137,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         defProps_.setProperty("greenscript.js.cache.check", "10s");
         defProps_.setProperty("greenscript.css.cache.check", "10s");
         defProps_.setProperty("greenscript.lessCompile.postMerge", "false");
+        defProps_.setProperty("greenscript.resources.param.enabled", "false");
     }
     
     public GreenScriptPlugin() {
@@ -124,7 +145,19 @@ public class GreenScriptPlugin extends PlayPlugin {
         minConf_ = new Properties();
         minConf_.putAll(defProps_);
     }
-    
+
+    @Override
+    public void onLoad() {
+        try {
+            Class.forName("com.greenlaw110.rythm.play.RythmPlugin");
+            rythmPresented_ = true;
+            debug_("rythm presented");
+        } catch (Exception e) {
+            // rythm template engine not presented.
+            debug_("rythm not presented");
+        }
+    }
+
     @Override
     public void onConfigurationRead() {
         
@@ -181,7 +214,32 @@ public class GreenScriptPlugin extends PlayPlugin {
             }
         }
     }
-    
+
+    /*
+     * provided here to avoid compilation error when Rythm Template Engine is not presented
+     */
+    private static final Template VOID_RYTHM_TMPL = new Template() {
+        @Override
+        public void compile() {
+        }
+
+        @Override
+        protected String internalRender(Map<String, Object> args) {
+            return null;
+        }
+    };
+
+    private final Pattern P = Pattern.compile(".*tags.rythm.greenscript.*");
+    @Override
+    public Template loadTemplate(VirtualFile file) {
+        if (rythmPresented_) return null; // let rythm to handle it
+        if (!file.exists()) return null;
+        if (P.matcher(file.relativePath()).matches()) {
+            return VOID_RYTHM_TMPL;
+        }
+        return null;
+    }
+
     @Override
     public void onApplicationStop() {
         cleanUp_();
@@ -567,6 +625,41 @@ public class GreenScriptPlugin extends PlayPlugin {
             }
         });
         m.setBufferLocator(bufferLocator_);
+        
+        boolean routerMapping = getBooleanProp_(p, "greenscript.router.mapping", false);
+        
+        if (routerMapping) {
+	        m.setRouteMapper(new IRouteMapper() {
+				@Override
+				public String reverse(String fileName) {
+					try {
+						String url = Router.reverseWithCheck(fileName, Play.getVirtualFile(fileName), false);
+						if (fileName.endsWith("/") && !url.endsWith("/")) {
+							url = url + "/";
+						}
+						return url;
+					} catch (NoRouteFoundException e) {
+						return fileName;
+					}
+				}
+	
+				@Override
+				public String route(String url) {
+					try {
+						Map<String, String> args = Router.route("GET", url);
+						return args.get("action");
+					} catch (RenderStatic rs) {
+						String fileName = rs.file;
+						if (url.startsWith("/") && !fileName.startsWith("/")) {
+							fileName = "/" + fileName;
+						}
+						return fileName;
+					} catch (NotFound ex) {
+						return url;
+					}
+				}
+			});
+        }
 
         String ext = type.getExtension();
         String rootDir = fetchProp_(p, "greenscript.dir.root");
@@ -586,6 +679,9 @@ public class GreenScriptPlugin extends PlayPlugin {
         m.setCacheDir(Play.getFile(cacheDir));
         m.setResourceDir(resourceDir);
         
+        boolean resourcesParameter = getBooleanProp_(p, "greenscript.resources.param.enabled", false);
+        m.setResourcesParam(resourcesParameter ? RESOURCES_PARAM : null);
+        
         boolean minimize = getBooleanProp_(p, "greenscript.minimize", Play.mode == Mode.PROD);
         boolean compress = getBooleanProp_(p, "greenscript.compress", true);
         boolean cache = getBooleanProp_(p, "greenscript.cache", true);
@@ -603,9 +699,22 @@ public class GreenScriptPlugin extends PlayPlugin {
         return m;
     }
     
-    public String getInMemoryFileContent(String key) {
-        BufferResource br = bufferLocator_.locate(key);
-        return null == br ? null : br.toString();
+    public String getInMemoryFileContent(String key, String resourceNames) {
+        IResource resource = bufferLocator_.locate(key);
+        
+        if (resource == null && resourceNames != null) {
+        	Minimizer minimizer = null;
+        	// Select the minimizer.
+        	if (key.endsWith(".js")) {
+        		minimizer = jsM_;
+        	} else if (key.endsWith(".css")) {
+        		minimizer = cssM_;
+        	}
+            
+        	resource = minimizer.minimize(resourceNames);
+        }
+        
+        return null == resource ? null : resource.toString();
     }
     
     private IBufferLocator bufferLocator_ = new IBufferLocator() {
@@ -617,8 +726,16 @@ public class GreenScriptPlugin extends PlayPlugin {
             return Cache.get(key_(key), BufferResource.class);
         }
         @Override
-        public BufferResource newBuffer(String extension) {
-            String key = UUID.randomUUID().toString() + extension;
+        public BufferResource newBuffer(List<String> resourceNames, String extension) {
+        	StringBuilder builder = new StringBuilder();
+        	for (String resourceName : resourceNames) {
+        		builder.append(resourceName);
+			}
+        	
+            String key = UUID.nameUUIDFromBytes(builder.toString().getBytes()).toString() + extension;
+            
+            Logger.trace("Created key '%s' from resources '%s' and extension '%s'", key, builder.toString(), extension);
+            
             BufferResource buffer = new BufferResource(key);
             Cache.set(key_(key), buffer);
             return buffer;
@@ -737,6 +854,8 @@ public class GreenScriptPlugin extends PlayPlugin {
 /*
  * History
  * -----------------------------------------------------------
+ * 1.2.7
+ *  - support cluster (like heroku), support rythm template engine
  * 1.2.6
  *  - support LESS, E-Tag and Last-Modified http header
  * 1.2.5:

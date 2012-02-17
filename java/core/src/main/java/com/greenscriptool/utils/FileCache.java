@@ -29,6 +29,9 @@ public class FileCache {
     
     public File createTempFile(String extension) {
         try {
+            if (!r_.isDirectory() && !r_.mkdir()) {
+              throw new RuntimeException("cannot create temporary directory for: " + r_);
+            }
             return File.createTempFile("gstmp", extension, r_);
         } catch (IOException e) {
             String msg = "Error create temp file";
