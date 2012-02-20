@@ -4,6 +4,7 @@ import com.google.javascript.jscomp.CompilationLevel;
 import com.google.javascript.jscomp.CompilerOptions;
 import com.google.javascript.jscomp.JSSourceFile;
 import com.google.javascript.jscomp.Result;
+import com.greenscriptool.Minimizer;
 import com.greenscriptool.ResourceType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -41,7 +42,11 @@ public class ClosureCompressor implements ICompressor {
         JSSourceFile file = JSSourceFile.fromInputStream("greenscript.js", new ReaderInputStream(r));
         List<JSSourceFile> files = new ArrayList<JSSourceFile>();
         files.add(file);
-        compiler.compile(externalJavascriptFiles, files, options);
-        w.write(compiler.toSource());
+        Result result = compiler.compile(externalJavascriptFiles, files, options);
+        if (result.success) {
+            w.write(compiler.toSource());
+        } else {
+            Minimizer.copy_(r, w);
+        }
     }
 }

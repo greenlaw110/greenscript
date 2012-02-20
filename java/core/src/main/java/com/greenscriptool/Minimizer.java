@@ -866,7 +866,7 @@ public class Minimizer implements IMinimizer {
         copy_(new FileReader(file), out);
     }
     
-    private static void copy_(Reader in, Writer out) throws IOException {
+    public static void copy_(Reader in, Writer out) throws IOException {
         String line = null;
         BufferedReader r = null;
         try {
