@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 self: play -> greenscript 1.2.8
+=======
+self: play -> greenscript 1.2.9
+>>>>>>> ba6fd39a411575809dc3843cfa524cd04f6e4c38
 
 require:
     - play [1.2,)
-    - play -> secure

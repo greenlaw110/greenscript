@@ -1,6 +1,7 @@
 package com.greenscriptool;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,11 +27,15 @@ public class MinimizerTest extends BaseTest {
     protected List<String> l = null; // temporarily holding processing result
     
     @Before
-    public void setUp() {
+    public void setUp() throws IOException {
         rootDir = rootDir();
         cssDir = new File(rootDir, "stylesheets");
         jsDir = new File(rootDir, "javascripts");
         cacheDir = new File(rootDir, "gs");
+        if (!cacheDir.exists()) {
+            if (!cacheDir.mkdirs())
+            	throw new IOException("Cannot create cache directory " + cacheDir.getAbsolutePath());
+        }
         
         //echo (new File(rootDir).getAbsolutePath());
         jm = new Minimizer(ResourceType.JS);
