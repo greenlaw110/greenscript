@@ -16,4 +16,5 @@ server.pid
 modules
 lib
 dist
+target
 *.pyc
