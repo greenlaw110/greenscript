@@ -39,13 +39,9 @@ under the License.
                 <include>documentation/**</include>
                 <include>public/**</include>
                 <include>src/**</include>
-                <!--<include>assembly-module.xml</include>-->
-                <!--<include>assembly-module-min.xml</include>-->
-                <include>bm.bat</include>
-                <include>build.bat</include>
-                <include>build.xml</include>
+                <include>assembly-dist.xml</include>
                 <include>commands.py</include>
-                <!--<include>pom.xml</include>-->
+                <include>pom.xml</include>
             </includes>
             <excludes>
                 <exclude>documentation/api/**</exclude>
