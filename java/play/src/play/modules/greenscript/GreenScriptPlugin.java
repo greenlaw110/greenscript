@@ -59,6 +59,10 @@ import com.greenscriptool.utils.IBufferLocator;
  * Define a Playframework plugin
  * 
  * @author greenlaw110@gmail.com
+ * @version 1.2.8 2012-02-16
+ *          fix bug: https://github.com/greenlaw110/greenscript/issues/36
+ *          support coffeescript
+ *          use google closure to compress javascript resource
  * @version 1.2.7 2012-01-31
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/30
  *          Add tags for rythm engine
@@ -80,7 +84,7 @@ import com.greenscriptool.utils.IBufferLocator;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.7";
+    public static final String VERSION = "1.2.8";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -133,6 +137,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         defProps_.setProperty("greenscript.cache", Play.mode == Mode.PROD ? "true" : "false");
         defProps_.setProperty("greenscript.cache.inmemory", "true");
         defProps_.setProperty("greenscript.less.enabled", "false");
+        defProps_.setProperty("greenscript.coffee.enabled", "false");
         defProps_.setProperty("greenscript.inline.process", "false");
         defProps_.setProperty("greenscript.js.cache.check", "10s");
         defProps_.setProperty("greenscript.css.cache.check", "10s");
@@ -499,8 +504,8 @@ public class GreenScriptPlugin extends PlayPlugin {
         cssM_ = initializeMinimizer_(minConf_, ResourceType.CSS);
 
         
-        if (p.containsKey("greenscript.useGoogleClosure")) {
-            System.setProperty("greenscript.useGoogleClosure", p.getProperty("greenscript.useGoogleClosure"));
+        if (p.containsKey("greenscript.coffee.enabled")) {
+            System.setProperty("greenscript.coffee.enabled", p.getProperty("greenscript.coffee.enabled"));
         }
         
         if (p.containsKey("greenscript.less.enabled")) {
@@ -851,21 +856,3 @@ public class GreenScriptPlugin extends PlayPlugin {
         return sb.toString();
     }
 }
-/*
- * History
- * -----------------------------------------------------------
- * 1.2.7
- *  - support cluster (like heroku), support rythm template engine
- * 1.2.6
- *  - support LESS, E-Tag and Last-Modified http header
- * 1.2.5:
- *  - support in memory cache
- * 1.2.3:
- *  - upgrade YUI compressor from 2.4.2 to 2.4.6
- *  - Fix bug: 404 error while fetching cached files when change minimize/cache setting dynamically
- *  - Fix bug: loaded logic breaks when minimize is enabled
- * 1.2.2: 
- *  - use Play.pluginCollection.getEnabledPlugins() in place of Play.plugins
- *  - greenscript.conf hot reloads on changes in DEV mode, merge from shorty-at / greenscript
- *  - add bundle and cdn test application
- */

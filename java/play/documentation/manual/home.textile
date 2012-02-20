@@ -3,10 +3,20 @@ h1. GreenScript module
 The GreenScript module help you to manage javascript and CSS dependencies and do minimizing work in the same time.
 <script type="text/javascript" src="http://www.ohloh.net/p/485839/widgets/project_users_logo.js"></script>
 
+h2. <a>What's new for v1.2.8</a>
+
+* Support CoffeeScript and Google Closure!
+* Bug fix: <a href="https://github.com/greenlaw110/greenscript/issues/36">#Greenscript does not respect the staticDir:public route mapping</a>
+** Special thanks to Mr.tazmaniax for his contribution!
+* Update YUICompressor to v2.4.7, lesscss-engine to v1.1.5; Bug fix: <a href="https://github.com/greenlaw110/greenscript/issues/34">Error compile less file error when working with bootstrap v2.0</a>
+** Thanks Mr.James Ward for reporting the issue
+
 h2. <a>What's new for v1.2.7</a>
 
 * Bug fix: <a href="https://github.com/greenlaw110/greenscript/issues/30">#30 running greenscript in a cluster on heroku</a>
+** Special thanks to Mr.tazmaniax for his contribution! And thanks to Mr. Pere Villega and other people who reporting this issue
 * Add tag for <a href="https://github.com/greenlaw110/play-rythm">Play Rythm</a> template engine
+** Rythm is a static template engine using Razor like syntax. The performance is at Japid level, but much more easy to integrate with Play. Simply speaking, the way you use groovy template is the way you use rythm. Think it as unobtrusive Japid template engine with Razor like syntax.
 
 h2. <a>What's new for v1.2.6m</a>
 

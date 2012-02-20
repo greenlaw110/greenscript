@@ -25,18 +25,15 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import com.greenscriptool.utils.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.asual.lesscss.LessEngine;
 import com.asual.lesscss.LessException;
-import com.greenscriptool.utils.BufferLocator;
-import com.greenscriptool.utils.FileCache;
-import com.greenscriptool.utils.FileResource;
-import com.greenscriptool.utils.GreenScriptCompressor;
-import com.greenscriptool.utils.IBufferLocator;
-import com.greenscriptool.utils.ICompressor;
+import org.jcoffeescript.JCoffeeScriptCompileException;
+import org.jcoffeescript.JCoffeeScriptCompiler;
 
 public class Minimizer implements IMinimizer {
 
@@ -62,20 +59,25 @@ public class Minimizer implements IMinimizer {
     private ResourceType type_;
 
     private LessEngine less_;
-    //private JCoffeeScriptCompiler coffee_;
-
-    public Minimizer(ResourceType type) {
-        this(new GreenScriptCompressor(type), type);
-    }
-
-    @Inject
-    public Minimizer(ICompressor compressor, ResourceType type) {
+    private JCoffeeScriptCompiler coffee_;
+    
+    private void init_(ICompressor compressor, ResourceType type) {
         if (null == compressor)
             throw new NullPointerException();
         compressor_ = compressor;
         type_ = type;
         less_ = new LessEngine();
-        //coffee_ = new JCoffeeScriptCompiler();
+        coffee_ = new JCoffeeScriptCompiler();
+    }
+
+    public Minimizer(ResourceType type) {
+        ICompressor compressor = type == ResourceType.CSS ? new YUICompressor(type) : new ClosureCompressor(type);
+        init_(compressor, type);
+    }
+
+    @Inject
+    public Minimizer(ICompressor compressor, ResourceType type) {
+        init_(compressor, type);
     }
 
     @Override
@@ -481,6 +483,14 @@ public class Minimizer implements IMinimizer {
         return less_.compile(f).replace("\\n", "\n");
     }
     
+    private String compileCoffee_(String s) throws JCoffeeScriptCompileException {
+        return coffee_.compile(s);
+    }
+    
+    private String compileCoffee_(File f) throws JCoffeeScriptCompileException, IOException {
+        return compileCoffee_(fileToString_(f));
+    }
+    
     public IResource minimize(String resourceNames) {
     	return minimize(decodeResourceNames(resourceNames));
     }
@@ -509,7 +519,7 @@ public class Minimizer implements IMinimizer {
                 try {
                     s = compileLess_(s);
                 } catch (LessException e) {
-                    logger_.warn("Error compile less content: " +  e.getMessage());
+                    logger_.warn("Error compile less content: " +  e.getMessage(), e);
                 }
                 if (compress_) {
                     try {
@@ -631,6 +641,13 @@ public class Minimizer implements IMinimizer {
             return false;
         boolean b = Boolean.parseBoolean(System.getProperty(
                 SYS_PROP_LESS_ENABLED, "false"));
+        return b;
+    }
+
+    public static final String SYS_PROP_COFFEE_ENABLED = "greenscript.coffee.enabled";
+    private boolean coffeeEnabled_() {
+        if (ResourceType.JS != type_) return false;
+        boolean b = Boolean.parseBoolean(System.getProperty(SYS_PROP_COFFEE_ENABLED, "false"));
         return b;
     }
 
@@ -760,16 +777,16 @@ public class Minimizer implements IMinimizer {
             try {
                 s = compileLess_(file);
             } catch (LessException e) {
-                logger_.warn("error compile less file: " + file.getName() + ", error: " + e.getMessage());
+                logger_.warn("error compile less file: " + file.getName() + ", error: " + e.getMessage(), e);
             }
         } else {
-//            if (file.getName().endsWith(".coffee")) {
-//                try {
-//                    s = coffee_.compile(fileToString_(file));
-//                } catch (JCoffeeScriptCompileException e) {
-//                    logger_.error("error compile coffee script file", e);
-//                }
-//            }
+            if (file.getName().endsWith(".coffee")) {
+                try {
+                    s = coffee_.compile(fileToString_(file));
+                } catch (JCoffeeScriptCompileException e) {
+                    logger_.error("error compile coffee script file", e);
+                }
+            }
         }
         if (null == s) s = fileToString_(file);
         return s;
@@ -783,14 +800,12 @@ public class Minimizer implements IMinimizer {
             } catch (LessException e) {
                 logger_.warn("error compile less file: " + originalFn + ", error: " + e.getMessage());
             }
-        } else {
-//            if (file.getName().endsWith(".coffee")) {
-//                try {
-//                    s = coffee_.compile(fileToString_(file));
-//                } catch (JCoffeeScriptCompileException e) {
-//                    logger_.error("error compile coffee script file", e);
-//                }
-//            }
+        } else if (coffeeEnabled_() && file.getName().endsWith(".coffee")) {
+            try {
+                s = compileCoffee_(file);
+            } catch (JCoffeeScriptCompileException e) {
+                logger_.error("error compile coffee script file", e);
+            }
         }
         if (null == s) s = fileToString_(file);
         if (ResourceType.CSS == type_) s = processRelativeUrl_(s, originalFn);
