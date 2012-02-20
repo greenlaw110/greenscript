@@ -5,11 +5,13 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.github.greenlaw110.greenscript</groupId> <!-- GS -->
+
+    <groupId>com.github.greenlaw110.greenscript</groupId>
     <artifactId>greenscript-core</artifactId>
     <packaging>jar</packaging>
-    <name>GreenScript Core</name>
     <version>1.2.9-SNAPSHOT</version>
+
+    <name>GreenScript Core</name>
     <description>A Java package to manage and process Web Resources (Javascript/CSS)</description>
     <url>http://github.com/greenlaw110/greenscript</url>
     
@@ -25,16 +27,6 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-    
-<!-- GS - there is no such repository available, at least I don't see it
-    <distributionManagement>
-        <repository>
-            <id>com.greenscriptool</id>
-            <name>GreenScript Releases Repository</name>
-            <url>http://greenscriptool.com/repositories/releases</url>
-        </repository>
-    </distributionManagement>
--->
     
     <repositories>  
         <repository>
