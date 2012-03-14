@@ -46,7 +46,7 @@ public class ClosureCompressor implements ICompressor {
         if (result.success) {
             w.write(compiler.toSource());
         } else {
-            Minimizer.copy_(r, w);
+            throw new Exception("error compile javascript");
         }
     }
 }

@@ -5,44 +5,53 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
- * FileCache implement 
- * 
+ * FileCache implement
+ *
  * @author greenlaw110@gmail.com
  * @version 1.0, 2010-10-13
  * @since 1.0
  */
 public class FileCache {
-    
+
     private File r_;
-    
+
     public FileCache(File root) {
         r_ = root;
     }
-    
+
     Map<List<String>, String> m_ = new HashMap<List<String>, String>();
-    
+
     private File f_(String fn) {
         return new File(r_, fn);
     }
-    
-    public File createTempFile(String extension) {
-        try {
+
+    public File createTempFile(List<String> resourceNames, String extension) {
+        //try {
             if (!r_.isDirectory() && !r_.mkdir()) {
               throw new RuntimeException("cannot create temporary directory for: " + r_);
             }
-            return File.createTempFile("gstmp", extension, r_);
-        } catch (IOException e) {
-            String msg = "Error create temp file";
-            throw new RuntimeException(msg, e);
-        }
+
+            StringBuilder builder = new StringBuilder();
+            for (String resourceName : resourceNames) {
+                builder.append(resourceName);
+            }
+
+            String key = UUID.nameUUIDFromBytes(builder.toString().getBytes()).toString() + extension;
+            //return File.createTempFile("gstmp", extension, r_);
+            return new File(r_, key);
+//        } catch (IOException e) {
+//            String msg = "Error create temp file";
+//            throw new RuntimeException(msg, e);
+//        }
     }
-    
+
     /**
      * Return cached filename. This method guarantees that
-     * file always exists if a non-null value returned 
-     * 
+     * file always exists if a non-null value returned
+     *
      * @param key
      * @return filename by key if file exists, null otherwise
      */
@@ -55,20 +64,20 @@ public class FileCache {
         }
         return fn;
     }
-    
+
     public String put(List<String> key, String fileName) {
         String old = remove(key);
         m_.put(key, fileName);
         return old;
     }
-    
+
     public String remove(List<String> key) {
         String fn = m_.remove(key);
         if (null == fn) return null;
         delFile_(fn);
         return fn;
     }
-    
+
     /**
      * Clear cache and corresponding files
      */
@@ -78,12 +87,12 @@ public class FileCache {
         }
         m_.clear();
     }
-    
+
     private void delFile_(String fn) {
         File f = f_(fn);
         if (f.exists()) {
             if (!f.delete()) f.deleteOnExit();
         }
     }
-        
+
 }

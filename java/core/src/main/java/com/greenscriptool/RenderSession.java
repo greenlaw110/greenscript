@@ -15,7 +15,7 @@ import org.apache.commons.logging.LogFactory;
 
 /**
  * The implementation of {@link IRenderSession} interface
- * 
+ *
  * @author greenlaw110@gmail.com
  * @version 1.0.1, 2010-11-13 add compatibility to play-greenscript v1.1 or before
  * @version 1.0, 2010-10-15 original version
@@ -23,36 +23,36 @@ import org.apache.commons.logging.LogFactory;
  */
 public class RenderSession implements IRenderSession {
     private static Log logger_ = LogFactory.getLog(IRenderSession.class);
-    
+
     private IMinimizer m_ = null;
-    
+
     private IDependenceManager d_ = null;
-    
+
     private ResourceType type_ = null;
-    
+
     /**
      * Store resource declared using {@link #declare(String, String, String)}
      */
     private Set<Resource> declared_ = new HashSet<RenderSession.Resource>();
-    
+
     /**
-     * Store all resources that has been loaded (in this session) already 
+     * Store all resources that has been loaded (in this session) already
      */
     private Set<String> loaded_ = new HashSet<String>();
-    
+
     /**
      * Store inline bodies declared
      */
     private SortedMap<Integer, StringBuffer> inlines_ = new TreeMap<Integer, StringBuffer>();
-    
+
     public ResourceType getResourceType() {
         return type_;
     }
-    
+
     /**
-     * Construct an {@link IRenderSession} with an {@link IMinimizer} instance, 
+     * Construct an {@link IRenderSession} with an {@link IMinimizer} instance,
      * an {@link IDependenceManager} instance and a {@link ResourceType}
-     * 
+     *
      * @param minimizer
      * @param depMgr
      * @param type
@@ -64,15 +64,14 @@ public class RenderSession implements IRenderSession {
         d_ = depMgr;
         type_ = type;
     }
-    
+
     private final void trace(String s, Object... args) {
 //        s = String.format(s, args);
 //        logger_.info(s);
     }
-    
+
     @Override
     public void declareInline(String inline, int priority) {
-        trace(">>declareInline");
         priority = -1 * priority;
         StringBuffer sb = inlines_.get(priority);
         if (null == sb) {
@@ -80,12 +79,10 @@ public class RenderSession implements IRenderSession {
             inlines_.put(priority, sb);
         }
         sb.append("\n").append(inline);
-        trace("<<declareInline");
     }
 
     @Override
     public void declare(String nameList, String media, String browser) {
-        trace(">>declare");
     	d_.processInlineDependency(nameList);
         String[] sa = nameList.split(SEPARATOR);
         media = canonical_(media);
@@ -93,25 +90,21 @@ public class RenderSession implements IRenderSession {
         for (String name: sa) {
             declared_.add(new Resource(name, media, browser));
         }
-        trace("<<declareInline");
     }
 
     @Override
     public void declare(List<String> nameList, String media, String browser) {
-        trace(">>declare2");
         media = canonical_(media);
         browser = canonical_(browser);
         for (String name: nameList) {
             declared_.add(new Resource(name, media, browser));
         }
-        trace("<<declareInline");
     }
 
     @Override
     public List<String> output(String nameList, boolean withDependencies, boolean all, String media, String browser) {
-        trace(">>output - ", nameList);
         if (null != nameList) declare(nameList, null, null);
-        
+
         List<String> l = null;
         if (all) {
             l = d_.comprehend(getByMediaAndBrowser_(media, browser), true);
@@ -126,55 +119,46 @@ public class RenderSession implements IRenderSession {
         } else {
             l = Collections.emptyList();
         }
-        
+
         if (l.isEmpty()) {
-            trace("<<output");
             return l;
         }
-        
+
         if (m_.isMinimizeEnabled()) {
-            trace(">>output: 1");
             l = m_.processWithoutMinimize(l);
             l.removeAll(loaded_);
             loaded_.addAll(l);
             trace(l.toString());
             l = m_.process(l);
-            trace(">>output: 3");
         } else {
-            trace(">>output: 4");
             l = m_.process(l);
             l.removeAll(loaded_);
             loaded_.addAll(l);
-            trace(">>output: 5");
         }
 
-        if (logger_.isTraceEnabled()) logger_.trace("output items: " + l);
-        trace("<<output");
         return l;
     }
-    
+
     @Override
     public String outputInline() {
-        trace(">>outputInline");
         StringBuilder all = new StringBuilder();
         for (StringBuffer sb: inlines_.values()) {
             all.append(sb);
             sb.delete(0, sb.length());
         }
-        trace("<<outputInline");
         return m_.processInline(all.toString());
     }
-    
+
     public boolean isDefault(String s) {
         s = canonical_(s);
         return s.equalsIgnoreCase(DEFAULT);
     }
-    
+
     private String canonical_(String s) {
         if (null == s) return DEFAULT;
         return s.trim().replaceAll("\\s+", " ");
     }
-    
+
     private Set<String> getByMediaAndBrowser_(String media, String browser) {
         Set<String> set = new HashSet<String>();
         media = canonical_(media);
@@ -187,7 +171,7 @@ public class RenderSession implements IRenderSession {
         set.removeAll(loaded_);
         return set;
     }
-    
+
     @Override
     public Set<String> getMedias(String browser) {
         Set<String> set = new HashSet<String>();
@@ -198,7 +182,7 @@ public class RenderSession implements IRenderSession {
         set.remove(DEFAULT);
         return set;
     }
-    
+
     @Override
     public Set<String> getBrowsers() {
         Set<String> set = new HashSet<String>();
@@ -208,7 +192,7 @@ public class RenderSession implements IRenderSession {
         set.remove(DEFAULT);
         return set;
     }
-    
+
     @Override
     public boolean hasDeclared() {
         return declared_.size() > 0;
@@ -218,14 +202,14 @@ public class RenderSession implements IRenderSession {
         String name;
         String media;
         String browser;
-        
+
         public Resource(String name, String media, String browser) {
             if (null == name) throw new NullPointerException();
             this.name = name;
             this.media = null == media ? DEFAULT : media;
             this.browser = null == browser ? DEFAULT : browser;
         }
-        
+
         @Override
         public boolean equals(Object obj) {
             if (obj == this) return true;
@@ -233,7 +217,7 @@ public class RenderSession implements IRenderSession {
             Resource that = (Resource)obj;
             return that.name.equals(name) && that.media.equals(media) && that.browser.equals(browser);
         }
-        
+
         @Override
         public int hashCode() {
             int ret = 17;
@@ -242,7 +226,7 @@ public class RenderSession implements IRenderSession {
             ret = ret * 31 + browser.hashCode();
             return ret;
         }
-        
+
         @Override
         public String toString() {
             return name;

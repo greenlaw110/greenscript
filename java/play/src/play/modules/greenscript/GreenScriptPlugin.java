@@ -57,7 +57,7 @@ import com.greenscriptool.utils.IBufferLocator;
 
 /**
  * Define a Playframework plugin
- * 
+ *
  * @author greenlaw110@gmail.com
  * @version 1.2.8 2012-02-16
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/36
@@ -67,7 +67,7 @@ import com.greenscriptool.utils.IBufferLocator;
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/30
  *          Add tags for rythm engine
  * @version 1.2.6, 2011-09-04
- *          support LESS, 
+ *          support LESS,
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/18
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/19
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/21
@@ -77,24 +77,24 @@ import com.greenscriptool.utils.IBufferLocator;
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/27
  * @version 1.2.5, 2011-08-07
  *          support in-memory cache
- * @version 1.2.1, 2011-01-20 
+ * @version 1.2.1, 2011-01-20
  *           1. support reverse dependency declaration, e.g:
  *           * js.jquery-1.4.4-=jquery-ui.1.8.7,jquery.tmpl
  * @version 1.2, 2010-10-16
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.8";
+    public static final String VERSION = "1.2.8a";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
                 String.format(msg, args));
     }
-    
+
     private static void info_(String msg, Object... args) {
         Logger.info(msg_(msg, args));
     }
-    
+
     private static void trace_(String msg, Object... args) {
         Logger.trace(msg_(msg, args));
     }
@@ -107,18 +107,18 @@ public class GreenScriptPlugin extends PlayPlugin {
     private Minimizer cssM_;
     private IDependenceManager jsD_;
     private IDependenceManager cssD_;
-    
+
     private Properties depConf_;
     private Properties minConf_;
-    
+
     private HashMap<String, Long> configFiles_;
-    
+
     private boolean eTag_ = false;
-    
+
     private boolean rythmPresented_ = false;
-    
+
     public static final String RESOURCES_PARAM = "resources";
-    
+
     private static Properties defProps_; static {
         defProps_ = new Properties();
         // file paths
@@ -144,7 +144,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         defProps_.setProperty("greenscript.lessCompile.postMerge", "false");
         defProps_.setProperty("greenscript.resources.param.enabled", "false");
     }
-    
+
     public GreenScriptPlugin() {
         //depConf_ = new Properties();
         minConf_ = new Properties();
@@ -165,20 +165,20 @@ public class GreenScriptPlugin extends PlayPlugin {
 
     @Override
     public void onConfigurationRead() {
-        
+
         loadDependencies();
-        
+
         eTag_ = Play.configuration.getProperty("http.useETag", "true").equalsIgnoreCase("true");
-        
+
         info_("initialized");
     }
-    
+
     private boolean stopRouteUpdate_ = false;
     private synchronized void updateRoute_() {
         if (inMemoryCache) {
             String url = cacheUrlPath_();
-            Router.addRoute(0, "GET", 
-                    url + "{key}", 
+            Router.addRoute(0, "GET",
+                    url + "{key}",
                     "greenscript.Service.getInMemoryCache",
                     null,
                     null);
@@ -189,7 +189,7 @@ public class GreenScriptPlugin extends PlayPlugin {
             stopRouteUpdate_ = false;
         }
     }
-    
+
     /**
      * Moved initialize from onApplicationStart to onRoutersLoaded because
      * Servlet 2.4 does not allow you to get the context path from the servletcontext...
@@ -200,14 +200,14 @@ public class GreenScriptPlugin extends PlayPlugin {
         InitializeMinimizers();
         updateRoute_();
     }
-    
+
     @Override
     public void afterApplicationStart() {
         Properties p = Play.configuration;
         for (ResourceType type: ResourceType.values()) {
             final Minimizer m = type == ResourceType.JS ? jsM_ : cssM_;
             String s = fetchProp_(p, String.format("greenscript%s.cache.check", type.getExtension()));
-            int i = "never".equalsIgnoreCase(s) ? -1 : Time.parseDuration(s); 
+            int i = "never".equalsIgnoreCase(s) ? -1 : Time.parseDuration(s);
             if (-1 != i) {
                 Job<Object> j = new Job<Object>() {
                     @Override
@@ -249,18 +249,18 @@ public class GreenScriptPlugin extends PlayPlugin {
     public void onApplicationStop() {
         cleanUp_();
     }
-    
+
     public String jsDebugString() {
         return ((DependenceManager)jsD_).debugString();
     }
-    
+
     public String cssDebugString() {
         return ((DependenceManager)cssD_).debugString();
     }
-    
+
     private static ThreadLocal<IRenderSession> sessJs_ = new ThreadLocal<IRenderSession>();
     private static ThreadLocal<IRenderSession> sessCss_ = new ThreadLocal<IRenderSession>();
-    
+
     public static IRenderSession session(String type) {
         ResourceType rt = ResourceType.valueOf(type.toUpperCase());
         switch (rt) {
@@ -269,15 +269,15 @@ public class GreenScriptPlugin extends PlayPlugin {
         }
         throw new UnexpectedException("unknown resource type: " + rt.name());
     }
-    
+
     public static IRenderSession jsSession() {
         return sessJs_.get();
     }
-    
+
     public static IRenderSession cssSession() {
         return sessCss_.get();
     }
-    
+
     private static class ResourceResolver extends Controller {
         public static String def(ResourceType type) {
             String template = Controller.template();
@@ -292,7 +292,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         sessJs_.set(sess);
         /*
          * Automatically declare js resource
-         * e.g /public/javascripts/Application/index.js 
+         * e.g /public/javascripts/Application/index.js
          */
         String def = ResourceResolver.def(ResourceType.JS);
         sess.declare(def, null, null);
@@ -300,14 +300,14 @@ public class GreenScriptPlugin extends PlayPlugin {
         sess = newSession_(ResourceType.CSS);
         sessCss_.set(sess);
         /*
-         * Automatically declare js resource 
+         * Automatically declare js resource
          * e.g. /public/stylesheets/Application/index.css
          */
         def = ResourceResolver.def(ResourceType.CSS);
         sess.declare(def, null, null);
     }
-    
-    
+
+
     //private static YUICompressor jsC_ = new YUICompressor(ResourceType.JS);
     //private static YUICompressor cssC_ = new YUICompressor(ResourceType.CSS);
     @Override
@@ -323,7 +323,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         if ((fn.endsWith("css") || fn.endsWith("less")) && cssM_.isMinimizeEnabled() && !file.relativePath().startsWith(cacheUrlPath_())) {
             return processStatic_(file, request, response, ResourceType.CSS);
         }
-        
+
         if (fn.endsWith(".css") || fn.endsWith(".js")) {
             // minimized resource
             final long l = file.lastModified();
@@ -338,14 +338,14 @@ public class GreenScriptPlugin extends PlayPlugin {
                 }
             }
         }
-        
+
         return false;
     }
-    
-//    private static final Pattern P_IMPORT = Pattern.compile(".*@import\\s*\"(.*?)\".*"); 
+
+//    private static final Pattern P_IMPORT = Pattern.compile(".*@import\\s*\"(.*?)\".*");
 //    private Set<File> imports_(File file) {
 //        String key = "less_imports_" + file.getPath() + file.lastModified();
-//        
+//
 //        @SuppressWarnings("unchecked")
 //        Set<File> files = Cache.get(key, Set.class);
 //        if (null == files) {
@@ -366,7 +366,7 @@ public class GreenScriptPlugin extends PlayPlugin {
 //        }
 //        return files;
 //    }
-    
+
 //    private long lastModified_(VirtualFile file, ResourceType type) {
 //        long l = file.lastModified();
 //        if (ResourceType.CSS == type) {
@@ -377,12 +377,12 @@ public class GreenScriptPlugin extends PlayPlugin {
 //        }
 //        return l;
 //    }
-    
+
     private void keepFlash_() {
         Flash f = Flash.current();
         if (f != null) f.keep();
     }
-    
+
     private boolean processStatic_(VirtualFile file, Request req, Response resp, ResourceType type) {
         /*
         IRenderSession sess = type == ResourceType.JS ? jsSession() : cssSession();
@@ -409,7 +409,7 @@ public class GreenScriptPlugin extends PlayPlugin {
                 return false;
             }
         } else {
-            
+
             try {
                 String content = min.processStatic(file.getRealFile());
                 resp.contentType = type == ResourceType.JS ? "text/javascript" : "text/css";
@@ -430,44 +430,44 @@ public class GreenScriptPlugin extends PlayPlugin {
 
     private HashMap<String, Long> currentConfigFiles() {
         HashMap<String, Long> files = new HashMap<String, Long>();
-        
+
         for(VirtualFile vf : Play.roots) {
             VirtualFile conf = vf.child("conf/greenscript.conf");
             if (conf.exists()) {
                 files.put(conf.getRealFile().getAbsolutePath(), conf.getRealFile().lastModified());
             }
         }
-        
+
         return files;
     }
-    
+
     private boolean filesChanged(HashMap<String, Long> oldFiles,  HashMap<String, Long> newFiles) {
         if(oldFiles.size() != newFiles.size()) {
             return true;
         }
-        
+
         for(Entry<String, Long> entry : oldFiles.entrySet()) {
             Long newTime = newFiles.get(entry.getKey());
             if(newTime == null || ! newTime.equals(entry.getValue())) {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     @Override
     public void detectChange() {
         if(Play.mode == Play.Mode.PROD) {
             return;
         }
-        
+
         if(filesChanged(this.configFiles_, currentConfigFiles())) {
             Logger.debug("greenscript: config files changed, reloading dependencies");
             GreenScriptPlugin.reloadDependencies();
         }
     }
-    
+
     public void loadDependencies() {
         Properties p = new Properties();
         for (VirtualFile vf: Play.roots) {
@@ -484,14 +484,14 @@ public class GreenScriptPlugin extends PlayPlugin {
         this.configFiles_ = this.currentConfigFiles();
         jsD_ = new DependenceManager(loadDepProp_(p, "js"));
         cssD_ = new DependenceManager(loadDepProp_(p, "css"));
-        
+
         depConf_ = p;
         info_("dependency loaded");
     }
-    
+
     public void InitializeMinimizers() {
         Properties p = Play.configuration;
-        
+
         for (String key: p.stringPropertyNames()) {
             if (key.startsWith("greenscript.")) {
                 String v = p.getProperty(key);
@@ -503,18 +503,18 @@ public class GreenScriptPlugin extends PlayPlugin {
         jsM_ = initializeMinimizer_(minConf_, ResourceType.JS);
         cssM_ = initializeMinimizer_(minConf_, ResourceType.CSS);
 
-        
+
         if (p.containsKey("greenscript.coffee.enabled")) {
             System.setProperty("greenscript.coffee.enabled", p.getProperty("greenscript.coffee.enabled"));
         }
-        
+
         if (p.containsKey("greenscript.less.enabled")) {
         	System.setProperty("greenscript.less.enabled", p.getProperty("greenscript.less.enabled"));
         }
-        
+
         info_("minimizer initialized");
     }
-    
+
     private IRenderSession newSession_(ResourceType type) {
         return type == ResourceType.JS ?
                 new RenderSession(jsM_, jsD_, type) :
@@ -526,13 +526,13 @@ public class GreenScriptPlugin extends PlayPlugin {
         p.putAll(depConf_);
         return p;
     }
-    
+
     public Properties getMinimizerConfig() {
         Properties p = new Properties();
         p.putAll(minConf_);
         return p;
     }
-    
+
     private String join_(Collection<String> c) {
         boolean first = true;
         StringBuffer sb = new StringBuffer();
@@ -543,7 +543,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         }
         return sb.toString();
     }
-    
+
     private void mergeProperties_(Properties p, String k, String v){
       String oldV = p.getProperty(k);
       if (null == oldV) {
@@ -557,7 +557,7 @@ public class GreenScriptPlugin extends PlayPlugin {
           p.setProperty(k, join_(oldS));
       }
     }
-    
+
     // type should be "js" or "css"
     private Properties loadDepProp_(Properties p, String type) {
         Properties p0 = new Properties();
@@ -602,7 +602,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         // checkInitialize_(false);
         if (!urlRoot.endsWith("/"))
             urlRoot = urlRoot + "/";
-        
+
         return urlRoot.startsWith(Play.ctxPath) ? urlRoot : Play.ctxPath + urlRoot;
     }
     private String cacheUrlPath_() {
@@ -630,9 +630,9 @@ public class GreenScriptPlugin extends PlayPlugin {
             }
         });
         m.setBufferLocator(bufferLocator_);
-        
+
         boolean routerMapping = getBooleanProp_(p, "greenscript.router.mapping", false);
-        
+
         if (routerMapping) {
 	        m.setRouteMapper(new IRouteMapper() {
 				@Override
@@ -647,7 +647,7 @@ public class GreenScriptPlugin extends PlayPlugin {
 						return fileName;
 					}
 				}
-	
+
 				@Override
 				public String route(String url) {
 					try {
@@ -670,12 +670,12 @@ public class GreenScriptPlugin extends PlayPlugin {
         String rootDir = fetchProp_(p, "greenscript.dir.root");
         String resourceDir = fetchProp_(p, "greenscript.dir" + ext);
         String cacheDir = fetchProp_(p, "greenscript.dir.minimized");
-        
+
         String urlRoot = resourceUrlRoot_();
         String resourceUrl = fetchProp_(p, "greenscript.url" + ext);
         String cacheUrl = cacheUrlPath_();
         setResourceUrlPath_(urlRoot, resourceUrl, ext);
-        
+
         m.setUrlContextPath(Play.ctxPath);
         m.setResourceUrlRoot(urlRoot);
         m.setResourceUrlPath(resourceUrl);
@@ -683,30 +683,30 @@ public class GreenScriptPlugin extends PlayPlugin {
         m.setRootDir(rootDir);
         m.setCacheDir(Play.getFile(cacheDir));
         m.setResourceDir(resourceDir);
-        
+
         boolean resourcesParameter = getBooleanProp_(p, "greenscript.resources.param.enabled", false);
         m.setResourcesParam(resourcesParameter ? RESOURCES_PARAM : null);
-        
+
         boolean minimize = getBooleanProp_(p, "greenscript.minimize", Play.mode == Mode.PROD);
         boolean compress = getBooleanProp_(p, "greenscript.compress", true);
         boolean cache = getBooleanProp_(p, "greenscript.cache", true);
         inMemoryCache = getBooleanProp_(p, "greenscript.cache.inmemory", false);
         boolean processInline = getBooleanProp_(p, "greenscript.inline.process", false);
         System.setProperty("greenscript.lessCompile.postMerge", fetchProp_(p, "greenscript.lessCompile.postMerge"));
-        
+
         m.enableDisableMinimize(minimize);
         m.enableDisableCompress(compress);
         m.enableDisableCache(cache);
         m.enableDisableInMemoryCache(inMemoryCache);
         m.enableDisableProcessInline(processInline);
-        
+
         trace_("minimizer for %1$s loaded", type.name());
         return m;
     }
-    
+
     public String getInMemoryFileContent(String key, String resourceNames) {
         IResource resource = bufferLocator_.locate(key);
-        
+
         if (resource == null && resourceNames != null) {
         	Minimizer minimizer = null;
         	// Select the minimizer.
@@ -715,13 +715,13 @@ public class GreenScriptPlugin extends PlayPlugin {
         	} else if (key.endsWith(".css")) {
         		minimizer = cssM_;
         	}
-            
+
         	resource = minimizer.minimize(resourceNames);
         }
-        
+
         return null == resource ? null : resource.toString();
     }
-    
+
     private IBufferLocator bufferLocator_ = new IBufferLocator() {
         private String key_(String key) {
             return String.format("%s.%s", CACHE_KEY_BUFFER, key);
@@ -736,26 +736,26 @@ public class GreenScriptPlugin extends PlayPlugin {
         	for (String resourceName : resourceNames) {
         		builder.append(resourceName);
 			}
-        	
+
             String key = UUID.nameUUIDFromBytes(builder.toString().getBytes()).toString() + extension;
-            
+
             Logger.trace("Created key '%s' from resources '%s' and extension '%s'", key, builder.toString(), extension);
-            
+
             BufferResource buffer = new BufferResource(key);
             Cache.set(key_(key), buffer);
             return buffer;
         }
     };
-    
+
     private static String fetchProp_(Properties p, String key) {
         String val = p.getProperty(key);
         if (null == val) val = defProps_.getProperty(key);
         return val;
     }
-    
+
     private boolean getBooleanProp_(Properties p, String key, boolean def) {
         try {
-            String s = p.containsKey(key) ? p.getProperty(key) 
+            String s = p.containsKey(key) ? p.getProperty(key)
                     : defProps_.containsKey(key) ? defProps_.getProperty(key)
                             : String.valueOf(def);
 
@@ -766,30 +766,30 @@ public class GreenScriptPlugin extends PlayPlugin {
             return def;
         }
     }
-    
+
 //    private File getDir_(String dir) {
 //        return Play.getFile(dir);
 //    }
-    
+
     private void cleanUp_() {
         if (null != jsM_) jsM_.clearCache();
         if (null != cssM_) cssM_.clearCache();
     }
-    
+
     public static GreenScriptPlugin getInstance() {
         for (PlayPlugin pp: Play.pluginCollection.getEnabledPlugins()) {
             if (pp instanceof GreenScriptPlugin) return (GreenScriptPlugin)pp;
         }
         return null;
     }
-    
+
     public static void updateMinimizer(boolean minimize, boolean compress, boolean cache, boolean inMemoryCache) {
         GreenScriptPlugin gs = getInstance();
         gs.jsM_.enableDisableMinimize(minimize);
         gs.jsM_.enableDisableCompress(compress);
         gs.jsM_.enableDisableCache(cache);
         gs.jsM_.enableDisableInMemoryCache(inMemoryCache);
-        
+
         gs.cssM_.enableDisableMinimize(minimize);
         gs.cssM_.enableDisableCompress(compress);
         gs.cssM_.enableDisableCache(cache);
@@ -824,13 +824,13 @@ public class GreenScriptPlugin extends PlayPlugin {
         gs.minConf_.setProperty("greenscript.cache", String.valueOf(cache));
         info_("cache %s", cache ? "enabled" : "disabled");
     }
-    
+
     public static void reloadDependencies() {
         GreenScriptPlugin gs = getInstance();
         gs.loadDependencies();
         info_("dependency reloaded");
     }
-    
+
     public static String lessImport(String fns) {
         GreenScriptPlugin gs = getInstance();
         Properties p = gs.minConf_;

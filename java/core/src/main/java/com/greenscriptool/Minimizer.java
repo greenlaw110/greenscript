@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -60,7 +61,7 @@ public class Minimizer implements IMinimizer {
 
     private LessEngine less_;
     private JCoffeeScriptCompiler coffee_;
-    
+
     private void init_(ICompressor compressor, ResourceType type) {
         if (null == compressor)
             throw new NullPointerException();
@@ -149,7 +150,7 @@ public class Minimizer implements IMinimizer {
         if (dir.startsWith(rootDir_)) {
             resourcePath_ = dir;
         } else if (dir.startsWith("/")) {
-            resourcePath_ = rootDir_ + dir; 
+            resourcePath_ = rootDir_ + dir;
         } else {
             resourcePath_ = rootDir_ + "/" + dir;
         }
@@ -167,7 +168,7 @@ public class Minimizer implements IMinimizer {
         if (logger_.isDebugEnabled())
             logger_.debug(String.format("root dir set to %1$s", dir));
     }
-    
+
     @Override
     public void setUrlContextPath(String ctxPath) {
         if (null == ctxPath) throw new NullPointerException();
@@ -193,12 +194,12 @@ public class Minimizer implements IMinimizer {
         // checkInitialize_(false);
         if (!urlRoot.endsWith("/"))
             urlRoot = urlRoot + "/";
-        
+
         resourceUrlRoot_ = urlRoot.startsWith(ctxPath_) ? urlRoot : ctxPath_ + urlRoot;
         if (logger_.isDebugEnabled())
             logger_.debug(String.format("url root set to %1$s", urlRoot));
     }
-    
+
     @Override
     public void setResourceUrlPath(String urlPath) {
         checkInitialize_(false);
@@ -215,7 +216,7 @@ public class Minimizer implements IMinimizer {
         if (logger_.isDebugEnabled())
             logger_.debug(String.format("url path set to %1$s", urlPath));
     }
-    
+
     @Override
     public void setCacheUrlPath(String urlPath) {
         checkInitialize_(false);
@@ -257,21 +258,21 @@ public class Minimizer implements IMinimizer {
             throw new NullPointerException();
         bl_ = bufferLocator;
     }
-    
+
     private IRouteMapper rm_ = null;
-    
+
     @Override
     public void setRouteMapper(IRouteMapper routeMapper) {
         if (null == routeMapper)
             throw new NullPointerException();
         rm_ = routeMapper;
-    }    
-    
+    }
+
     private static final Pattern P_IMPORT = Pattern.compile("^\\s*@import\\s*\"(.*?)\".*");
     private Map<String, Set<File>> importsCache_ = new HashMap<String, Set<File>>();
     private Set<File> imports_(File file) {
         String key = "less_imports_" + file.getPath() + file.lastModified();
-        
+
         Set<File> files = importsCache_.get(key);
         if (null == files) {
             files = new HashSet<File>();
@@ -292,7 +293,7 @@ public class Minimizer implements IMinimizer {
         }
         return files;
     }
-    
+
     @Override
     public long getLastModified(File file) {
         long l = file.lastModified();
@@ -304,7 +305,7 @@ public class Minimizer implements IMinimizer {
         }
         return l;
     }
-    
+
     @Override
     public void checkCache() {
         for(List<String> l: processCache_.keySet()) {
@@ -322,7 +323,7 @@ public class Minimizer implements IMinimizer {
             }
         }
     }
-    
+
     private ConcurrentMap<List<String>, List<String>> processCache_ = new ConcurrentHashMap<List<String>, List<String>>();
 
     /**
@@ -368,7 +369,7 @@ public class Minimizer implements IMinimizer {
             return retLst;
         }
     }
-    
+
     private final String getExtension_(String path) {
         int pos = path.lastIndexOf(".");
         return -1 == pos ? "" : path.substring(pos, path.length());
@@ -396,15 +397,15 @@ public class Minimizer implements IMinimizer {
                         || s.endsWith(IDependenceManager.BUNDLE_SUFFIX)) {
                     continue;
                 }
-                
+
                 f = getFile_(fn);
                 if (null == f || !f.isFile()) {
                     continue;
                 }
-                
+
                 String ext = getExtension_(f.getName());
                 fn = fn.endsWith(ext) ? fn : fn + ext;
-                
+
                 fn = getUrl_(fn);
 
                 l.add(fn);
@@ -417,6 +418,42 @@ public class Minimizer implements IMinimizer {
         return l;
     }
 
+    private String compress(String content) {
+        try {
+            Reader r = new StringReader(content);
+            StringWriter w = new StringWriter();
+            compressor_.compress(r, w);
+            return w.toString();
+        } catch (Exception e) {
+            logger_.warn("error compress resource", e);
+            return content;
+        }
+    }
+
+    private void compress(File file, Writer out) {
+        try {
+            Reader r = new BufferedReader(new FileReader(file));
+            try {
+                compressor_.compress(r, out);
+            } catch (Exception e) {
+                logger_.warn("error compress resource " + file.getPath(), e);
+                copy_(file, out);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void compress(String content, Writer out) {
+        Reader r = new StringReader(content);
+        try {
+            compressor_.compress(r, out);
+        } catch (Exception e) {
+            logger_.warn("error compress resource", e);
+            copy_(content, out);
+        }
+    }
+
     @Override
     public String processInline(String content) {
         if (!processInline_)
@@ -424,10 +461,7 @@ public class Minimizer implements IMinimizer {
         try {
             content = preprocess_(content);
             if (this.compress_) {
-                Reader r = new StringReader(content);
-                StringWriter w = new StringWriter();
-                compressor_.compress(r, w);
-                return w.toString();
+                return compress(content);
             } else {
                 return content;
             }
@@ -451,10 +485,7 @@ public class Minimizer implements IMinimizer {
         }
         try {
             if (this.compress_) {
-                Reader r = new StringReader(content);
-                StringWriter w = new StringWriter();
-                compressor_.compress(r, w);
-                return w.toString();
+                return compress(content);
             } else {
                 return content;
             }
@@ -470,31 +501,31 @@ public class Minimizer implements IMinimizer {
             }
         }
     }
-    
+
     private static String dos2unix_(String s) {
         return s.replaceAll("\r\n", "\n");
     }
-    
+
     private String compileLess_(String s) throws LessException {
         return less_.compile(dos2unix_(s)).replace("\\n", "\n");
     }
-    
+
     private String compileLess_(File f) throws LessException {
         return less_.compile(f).replace("\\n", "\n");
     }
-    
+
     private String compileCoffee_(String s) throws JCoffeeScriptCompileException {
         return coffee_.compile(s);
     }
-    
+
     private String compileCoffee_(File f) throws JCoffeeScriptCompileException, IOException {
         return compileCoffee_(fileToString_(f));
     }
-    
+
     public IResource minimize(String resourceNames) {
     	return minimize(decodeResourceNames(resourceNames));
     }
-    
+
     private IResource minimize(List<String> resourceNames) {
         IResource rsrc = newCache_(resourceNames);
         Writer out = rsrc.getWriter();
@@ -506,7 +537,7 @@ public class Minimizer implements IMinimizer {
                     throw new IllegalArgumentException(
                             "CDN resource not expected in miminize method");
                 }
-                
+
                 File f = getFileFromURL_(s);
                 if (null != f && f.exists()) {
                     merge_(f, sw, s);
@@ -523,14 +554,9 @@ public class Minimizer implements IMinimizer {
                 }
                 if (compress_) {
                     try {
-                        Reader r = null;
-                        r = new StringReader(s);
-                        compressor_.compress(r, out);
+                        compress(s, out);
                     } catch (StackOverflowError e) {
                         logger_.error("fatal error compressing resource: " + e.getMessage());
-                    } catch (Exception e) {
-                        logger_.warn("error compressoing merged content", e);
-                        copy_(s, out);
                     }
                 } else {
                     copy_(s, out);
@@ -549,7 +575,7 @@ public class Minimizer implements IMinimizer {
                 }
             }
         }
-        
+
         return rsrc;
     }
 
@@ -573,12 +599,12 @@ public class Minimizer implements IMinimizer {
         // Note it's absolutely not a good idea to turn cache off
         // and minimize on in a production environment
         cache.put(resourceNames, fn);
-        
+
         try {
         	StringBuilder builder = new StringBuilder();
         	builder.append(cacheUrlPath_);
         	builder.append(fn);
-        	
+
         	if (this.resourcesParam_ != null) {
         		String resourcesParamValue = this.encodeResourceNames(resourceNames);
         		if (resourcesParamValue != null) {
@@ -593,7 +619,7 @@ public class Minimizer implements IMinimizer {
 			throw new IllegalStateException(e);
 		}
     }
-    
+
     private String encodeResourceNames(List<String> resourceNames) {
     	StringBuilder builder = new StringBuilder();
     	for (String resourceName : resourceNames) {
@@ -610,7 +636,7 @@ public class Minimizer implements IMinimizer {
 		}
     	return (builder.length() > 0) ? builder.toString() : null;
     }
-    
+
     private List<String> decodeResourceNames(String resourceNames) {
     	String[] names = resourceNames.split("[,]");
     	if (names.length == 0) {
@@ -618,7 +644,7 @@ public class Minimizer implements IMinimizer {
     	}
 
     	List<String> l = new ArrayList<String>(names.length);
-    	
+
 		for (String name : names) {
 			name = StringUtils.stripToNull(name);
 			if (name != null) {
@@ -630,7 +656,7 @@ public class Minimizer implements IMinimizer {
 				}
 			}
 		}
-    	
+
 		return l;
     }
 
@@ -654,16 +680,16 @@ public class Minimizer implements IMinimizer {
     /*
      * replace relative url inside the file content with absolute url. This is
      * because the compressed version file will be put in another folder
-     * 
+     *
      * @param s the content
-     * 
+     *
      * @param fn the original file name
      */
     private static final Pattern P_URL = Pattern.compile("url\\(['\"]?([^/'\"][^'\"]*?)['\"]?\\)", Pattern.CASE_INSENSITIVE | Pattern.CANON_EQ | Pattern.UNICODE_CASE);
     private String processRelativeUrl_(String s, String fn) throws IOException {
         if (ResourceType.CSS != type_)
             throw new IllegalStateException("not a css minimizer");
-        
+
         if (this.rm_ != null) {
         	fn = this.rm_.route(fn);
         }
@@ -682,11 +708,11 @@ public class Minimizer implements IMinimizer {
         } else {
             prefix = resourceUrlPath_ + fn;
         }
-        
+
         if (this.rm_ != null) {
         	prefix = this.rm_.reverse(prefix);
         }
-        
+
         try {
             Matcher m = P_URL.matcher(s);
             s = m.replaceAll("url(" + prefix + "$1)");
@@ -710,7 +736,7 @@ public class Minimizer implements IMinimizer {
         r.close();
         return sb.toString();
     }
-    
+
     private List<String> fileToLines_(File f) throws IOException {
         BufferedReader r = new BufferedReader(new FileReader(f));
         String l = null;
@@ -732,18 +758,13 @@ public class Minimizer implements IMinimizer {
         try {
             String s = preprocess_(file, originalFn);
             if (compress_ && (!lessEnabled_() || !postMergeLessCompile_())) {
-                try {
-                    if (logger_.isTraceEnabled())
-                        logger_.trace(String.format("compressing %1$s ...",
-                                file.getName()));
-                    Reader r = null;
-                    r = null != s ? new StringReader(s) : new BufferedReader(new FileReader(file));
-                    compressor_.compress(r, out);
-                } catch (Exception e) {
-                    logger_.warn(
-                            String.format("error minimizing file %1$s",
-                                    file.getName()), e);
-                    copy_(file, out);
+                if (logger_.isTraceEnabled())
+                    logger_.trace(String.format("compressing %1$s ...",
+                            file.getName()));
+                if (null != s) {
+                    compress(s, out);
+                } else {
+                    compress(file, out);
                 }
             } else {
                 if (null != s) copy_(s, out);
@@ -755,7 +776,7 @@ public class Minimizer implements IMinimizer {
                     e);
         }
     }
-    
+
     private String preprocess_(String s) {
         if (lessEnabled_()) {
             try {
@@ -766,11 +787,11 @@ public class Minimizer implements IMinimizer {
         }
         return s;
     }
-    
+
     private boolean postMergeLessCompile_() {
         return Boolean.valueOf(System.getProperty("greenscript.lessCompile.postMerge", "false"));
     }
-    
+
     private String preprocess_(File file) throws IOException {
         String s = null;
         if (lessEnabled_() && !postMergeLessCompile_()) {
@@ -791,7 +812,7 @@ public class Minimizer implements IMinimizer {
         if (null == s) s = fileToString_(file);
         return s;
     }
-    
+
     private String preprocess_(File file, String originalFn) throws IOException {
         String s = null;
         if (lessEnabled_() && !postMergeLessCompile_()) {
@@ -811,10 +832,10 @@ public class Minimizer implements IMinimizer {
         if (ResourceType.CSS == type_) s = processRelativeUrl_(s, originalFn);
         return s;
     }
-    
+
     private String getUrl_(String resourceName) {
     	String url = null;
-    	
+
         if (!"".equals(ctxPath_) && resourceName.startsWith(ctxPath_)) {
         	url = resourceName;
         } else if (resourceName.startsWith("/")) {
@@ -827,10 +848,10 @@ public class Minimizer implements IMinimizer {
         } else {
             url = resourceUrlPath_ + resourceName;
         }
-        
+
         return (this.rm_ != null) ? this.rm_.reverse(url) : url;
     }
-    
+
 	private File getFileFromURL_(String url) {
 		return this.getFile_((this.rm_ != null) ? this.rm_.route(url) : url);
 	}
@@ -865,8 +886,8 @@ public class Minimizer implements IMinimizer {
             logger_.trace(String.format("merging file %1$s ...", file.getName()));
         copy_(new FileReader(file), out);
     }
-    
-    public static void copy_(Reader in, Writer out) throws IOException {
+
+    public static void copy_(Reader in, Writer out)  {
         String line = null;
         BufferedReader r = null;
         try {
@@ -875,13 +896,15 @@ public class Minimizer implements IMinimizer {
             while ((line = r.readLine()) != null) {
                 w.println(line);
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         } finally {
             if (null != r)
-                r.close();
+                try {r.close();} catch (IOException e) {/*ignore*/}
         }
     }
-    
-    private static void copy_(String s, Writer out) throws IOException {
+
+    private static void copy_(String s, Writer out) {
         copy_(new StringReader(s), out);
     }
 
@@ -889,13 +912,13 @@ public class Minimizer implements IMinimizer {
         if (inMemory_) {
             return bl_.newBuffer(resourceNames, type_.getExtension());
         } else {
-            return new FileResource(newCacheFile_());
+            return new FileResource(newCacheFile_(resourceNames));
         }
     }
 
-    private File newCacheFile_() {
+    private File newCacheFile_(List<String> resourceNames) {
         String extension = type_.getExtension();
-        return cache_.createTempFile(extension);
+        return cache_.createTempFile(resourceNames, extension);
     }
 
     private void checkInitialize_(boolean initialized) {
@@ -912,7 +935,7 @@ public class Minimizer implements IMinimizer {
     public ResourceType getType() {
         return type_;
     }
-    
+
     private final static Pattern P_CDN_PREFIX = Pattern.compile("^https?:");
     private final boolean isCDN_(String resourceName) {
         if (null == resourceName) return false;

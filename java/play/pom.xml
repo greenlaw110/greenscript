@@ -30,7 +30,7 @@ under the License.
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.greenlaw110.greenscript</groupId>
     <artifactId>greenscript-play</artifactId>
-    <version>1.2.9-SNAPSHOT</version>
+    <version>1.2.8-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Play! GreenScript Module</name>

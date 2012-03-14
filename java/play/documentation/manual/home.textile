@@ -3,6 +3,11 @@ h1. GreenScript module
 The GreenScript module help you to manage javascript and CSS dependencies and do minimizing work in the same time.
 <script type="text/javascript" src="http://www.ohloh.net/p/485839/widgets/project_users_logo.js"></script>
 
+h2. <a>What's new for v1.2.8a</a>
+
+* File cache now use UUID generated name also
+* Capture google closure compilation error and copy content if it happened
+
 h2. <a>What's new for v1.2.8</a>
 
 * Support CoffeeScript and Google Closure!
@@ -107,7 +112,7 @@ h2. <a>What's New for v1.2a</a>
 
 h2. <a>What's New for v1.2</a>
 
-* Completely rewrite. 
+* Completely rewrite.
 ** GreenScript core logic detached from Play plugin project
 ** Clearly defined interface and well documented code comment
 ** Unit test cases for core logic
@@ -139,7 +144,7 @@ h2. <a>What's New for v1.1</a>
 
 h2. <a>What's New for v1.0</a>
 
-* Bug fixes: 
+* Bug fixes:
 ** dependency management fail while in 'dev' mode
 ** <a href='http://github.com/greenlaw110/play-greenscript/issues#issue/1'>greenscript should use play configuration file</a>
 * Enhancements:
@@ -208,7 +213,7 @@ bc. # Enable/Disable minimize
 #	to follow the dependency graph you have defined in "greenscript.conf" file
 #
 #	When minimize turned on, GreenScript will merge all javascript/css files
-#	within one HTTP request into a single file. Again the merge order is 
+#	within one HTTP request into a single file. Again the merge order is
 #	guaranteed to follow the dependency graph you have defined in the
 #	"greenscript.conf" file
 #
@@ -318,7 +323,7 @@ p. Yes! that's it. I know you might have some questions, don't worry. Let me unv
 ** When you put <samp>output: 'all'</samp> in <samp>#{greenscript.js}</samp> tag, it will output all unloaded js dependency files as well as the default js file you've defined in <samp>greenscript.conf</samp>. I am sure <samp>jquery-1.4.2.min.js</samp> will be reached by either of the 2 lookup paths, otherwise, I assume you will not need that file. For perfectionist, here is how to load the file anyway: <samp>#{greenscript.js "jquery-1.4.2.min.js", output: true/}</samp>
 * How can I get "moreStyles" and "moreScripts"?
 ** You get them automatically when you have <samp>output: true</samp> for <samp>#{greenscript.css}</samp> or <samp>output: 'all'</samp> for <samp>#{greenscript.js}</samp>. The assumption is you have told GreenScript that you need them in other places. I will let you know how to do that later at next section.
-* Why do you use <samp>output</samp> for css while <samp>loadAll</samp> for js? 
+* Why do you use <samp>output</samp> for css while <samp>loadAll</samp> for js?
 ** loadAll is deprecated now. Both css and js use 'output: "all"' to output all inline declared and dependencies that has not output yet
 
 h4. <a>Other templates</a>
@@ -390,7 +395,7 @@ p. Note, this feature should be used with cautious. By embedding less code in vi
 
 h4. <a>Inline Dependency Declaration</a>
 
-p. There is a long time complaint that greenscript does not guarantee the output sequence of resource (js/css) files match the sequence of declaring those files in tags. For example, #{greenscript.js 'a b c'/} does not necessarily output or marge javascript 'a.js', 'b.js' and 'c.js' in a sequence that a.js followed by b.js and then c.js. This is because greenscript output is driven by dependencies (which is defined in greenscript.conf), rather than the sequence declared in tag. Actually greenscript cannot and shouldn't follow the sequence declared in tag at all. The reason is 
+p. There is a long time complaint that greenscript does not guarantee the output sequence of resource (js/css) files match the sequence of declaring those files in tags. For example, #{greenscript.js 'a b c'/} does not necessarily output or marge javascript 'a.js', 'b.js' and 'c.js' in a sequence that a.js followed by b.js and then c.js. This is because greenscript output is driven by dependencies (which is defined in greenscript.conf), rather than the sequence declared in tag. Actually greenscript cannot and shouldn't follow the sequence declared in tag at all. The reason is
 1. the sequence of tag declaration might conflict with dependencies declared in greenscript.conf
 2. it is hard to tell the sequence of tag declaration when the developer declare resources in multiple templates with inheritance relationships
 
@@ -409,7 +414,7 @@ A < B means A relies on B
 
 h4. <a>Media and Browser</a>
 
-p. GreenScript support media and browser options start from v1.2. Issue tag "<code>#{greenscript.css 'print.css', media: 'printer'}</code>" to declare a css resource target to "printer" media. Later when you output all css files by "<code>#{greenscript.css output:'all'}</code>", one line will be output as: 
+p. GreenScript support media and browser options start from v1.2. Issue tag "<code>#{greenscript.css 'print.css', media: 'printer'}</code>" to declare a css resource target to "printer" media. Later when you output all css files by "<code>#{greenscript.css output:'all'}</code>", one line will be output as:
 
 <pre><code><link rel="stylesheet" type="text/css" media="printer" href="/compressed/print.css"></code></pre>
 
@@ -468,7 +473,7 @@ p. Okay, how do you feel about this Plugin? Still not satisfied because you don'
 
 bc. play greenscript:cp -a gs
 
-p. Now guess what happened? You are right, it copied the tags from module folder to your app folder: your-app-root/app/views/tag/gs. And now you can use tags in short version: #{gs.js "js1 js2 ..." /} and #{gs.css "css1 ..." /}. What? you are still not satisfied? how come? it's already shorter than play's #{script} tag! Okay, here is my nuclear weapon: 
+p. Now guess what happened? You are right, it copied the tags from module folder to your app folder: your-app-root/app/views/tag/gs. And now you can use tags in short version: #{gs.js "js1 js2 ..." /} and #{gs.css "css1 ..." /}. What? you are still not satisfied? how come? it's already shorter than play's #{script} tag! Okay, here is my nuclear weapon:
 
 bc. play greenscript:cp -a .
 ...
@@ -482,13 +487,13 @@ p. How do you expect anything more simpler than this?
 h3. <a>Zero configuration</a>
 
 GreenScript plugin now support zero configuration. It means besides enabling it in your application.conf, you don't need to do any configuration to use it, you don't even need to create "greenscript.conf" file in your conf dir. But what do you get if you don't do any configuration? Well basically you can still benefit from GreenScript with zero configuration:
-* The tags. You are free to utilize all the knowledges you've learned from <a href="#using-tags">Using Tags</a> section. 
+* The tags. You are free to utilize all the knowledges you've learned from <a href="#using-tags">Using Tags</a> section.
 * Minimize/compress. You can also benefit from minimizing/compressing/cache capability of GreenScript.
 * Dynamic configuration. You can also use the dynamic configuration controller.
 
 So what do you lost without any configuration?
 * Dependency management. Without dependencies infomation defined in <samp>greenscript.conf</samp> file, you are on your own to take care of js/css file dependencies. When you are declare a javascript or css file in a template, you should also make sure all its dependencies are explicitly declared before that scripts "IN PLACE"! If you failed to do that, you might get a lot of script/css errors in your final rendered html page.
-* Dir/URL path bound to play's default. With zero configration, you need to make sure your dir structure (the public) and route mapping of public dir strictly follow Play's convention. Otherwise GreenScript won't be able to locate the javascript/css files. 
+* Dir/URL path bound to play's default. With zero configration, you need to make sure your dir structure (the public) and route mapping of public dir strictly follow Play's convention. Otherwise GreenScript won't be able to locate the javascript/css files.
 
 As an example to demonstrate zero configuration, I put the ${play.path}/samples-and-tests/booking sample in the samples-and-tests dir of greenscript, makes the minimum changes to the templates and application.conf files.
 
@@ -500,12 +505,12 @@ In conclusion, GreenScript is a flexible and powerful javascript/css management 
 
 h3. <a>CDN Support</a>
 
-Greenscript support CDN start from version 1.1a. 
+Greenscript support CDN start from version 1.1a.
 
 h4. Configure CDN dependencies
 
-bc. # Note you must escape ':' if it is in the 'key' part, no need to escape if 
-# it's in the 'value' part. This is due to the java.util.Properties treat ':' 
+bc. # Note you must escape ':' if it is in the 'key' part, no need to escape if
+# it's in the 'value' part. This is due to the java.util.Properties treat ':'
 # as separator between key and value
 js.http\://ajax.googleapis.com/ajax/libs/scriptaculous/1.8.3/scriptaculous.js=http://ajax.googleapis.com/ajax/libs/prototype/1.6.1.0/prototype.js
 
