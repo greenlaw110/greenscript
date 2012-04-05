@@ -8,12 +8,8 @@ import java.io.Writer;
 
 import com.greenscriptool.IResource;
 
-public class BufferResource implements IResource, Serializable {
-    
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 3173516477770425002L;
+public class BufferResource implements IResource {
+	private static final long serialVersionUID = 3173516477770425002L;
     
     private String key_;
     private String buffer_;
@@ -23,18 +19,16 @@ public class BufferResource implements IResource, Serializable {
         key_ = key;
     }
 
-    @Override
     public Reader getReader() {
         return new StringReader(buffer_);
     }
 
-
-    @Override
     public Writer getWriter() {
         return new StringWriter(){
             @Override
             public void close() {
                 BufferResource.this.buffer_ = this.toString();
+                BufferResource.this.onWriterClose();
             }
         };
     }
@@ -44,7 +38,6 @@ public class BufferResource implements IResource, Serializable {
         return buffer_;
     }
 
-    @Override
     public String getKey() {
         return key_;
     }
@@ -57,4 +50,7 @@ public class BufferResource implements IResource, Serializable {
         System.out.println(br);
     }
 
+    protected void onWriterClose() {
+    	// Do nothing.
+    }
 }

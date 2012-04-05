@@ -29,7 +29,6 @@ public class YUICompressor implements ICompressor {
         type_ = type;
     }
 
-    @Override
     public void compress(Reader r, Writer w) throws Exception {
         try {
             switch (type_) {

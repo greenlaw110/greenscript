@@ -13,7 +13,6 @@ import com.greenscriptool.IResource;
 public class FileResource implements IResource {
     
     public static class FileLocator implements IFileLocator {
-        @Override
         public File locate(String path) {
             return new File(path);
         }
@@ -34,7 +33,6 @@ public class FileResource implements IResource {
         file_ = fileLocator.locate(path);
     }
 
-    @Override
     public Reader getReader() {
         try {
             return null == file_ ? null : new FileReader(file_);
@@ -43,7 +41,6 @@ public class FileResource implements IResource {
         }
     }
 
-    @Override
     public Writer getWriter() {
         try {
             return null == file_ ? null : new FileWriter(file_);
@@ -52,7 +49,6 @@ public class FileResource implements IResource {
         }
     }
 
-    @Override
     public String getKey() {
         return null == file_ ? null : file_.getName();
     }
