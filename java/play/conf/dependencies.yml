@@ -1,4 +1,6 @@
-self: play -> greenscript 1.2.8a
+# History
+# 1.2.8b - update rythm tag file to play-rythm-0.9.8
+self: play -> greenscript 1.2.8b
 
 require:
     - play [1.2,)
