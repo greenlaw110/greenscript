@@ -1,0 +1,4 @@
+@args String type
+@raw() {
+@("js".equalsIgnoreCase(type) ? "</script>" : ("css".equalsIgnoreCase(type) ? "</style>" : "" ))
+}
