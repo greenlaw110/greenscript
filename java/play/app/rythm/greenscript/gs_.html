@@ -37,7 +37,7 @@
 @if (null != _body) {
     @if (_output) {
         @greenscript.openTag_(type)
-        @raw() {@_body}
+        @renderBody()
         @greenscript.closeTag_(type)
     } else {
         @{ sm.declareInline(_body.toString(), priority) }@
