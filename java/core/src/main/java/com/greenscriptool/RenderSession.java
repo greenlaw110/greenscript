@@ -70,7 +70,6 @@ public class RenderSession implements IRenderSession {
 //        logger_.info(s);
     }
 
-    @Override
     public void declareInline(String inline, int priority) {
         priority = -1 * priority;
         StringBuffer sb = inlines_.get(priority);
@@ -81,7 +80,6 @@ public class RenderSession implements IRenderSession {
         sb.append("\n").append(inline);
     }
 
-    @Override
     public void declare(String nameList, String media, String browser) {
     	d_.processInlineDependency(nameList);
         String[] sa = nameList.split(SEPARATOR);
@@ -92,7 +90,6 @@ public class RenderSession implements IRenderSession {
         }
     }
 
-    @Override
     public void declare(List<String> nameList, String media, String browser) {
         media = canonical_(media);
         browser = canonical_(browser);
@@ -101,7 +98,6 @@ public class RenderSession implements IRenderSession {
         }
     }
 
-    @Override
     public List<String> output(String nameList, boolean withDependencies, boolean all, String media, String browser) {
         if (null != nameList) declare(nameList, null, null);
 
@@ -139,7 +135,6 @@ public class RenderSession implements IRenderSession {
         return l;
     }
 
-    @Override
     public String outputInline() {
         StringBuilder all = new StringBuilder();
         for (StringBuffer sb: inlines_.values()) {
@@ -172,7 +167,6 @@ public class RenderSession implements IRenderSession {
         return set;
     }
 
-    @Override
     public Set<String> getMedias(String browser) {
         Set<String> set = new HashSet<String>();
         browser = canonical_(browser);
@@ -183,7 +177,6 @@ public class RenderSession implements IRenderSession {
         return set;
     }
 
-    @Override
     public Set<String> getBrowsers() {
         Set<String> set = new HashSet<String>();
         for (Resource r: declared_) {
@@ -193,7 +186,6 @@ public class RenderSession implements IRenderSession {
         return set;
     }
 
-    @Override
     public boolean hasDeclared() {
         return declared_.size() > 0;
     }

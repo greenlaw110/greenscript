@@ -705,7 +705,7 @@ public class GreenScriptPlugin extends PlayPlugin {
     }
 
     public String getInMemoryFileContent(String key, String resourceNames) {
-        IResource resource = bufferLocator_.locate(key);
+    	IResource resource = bufferLocator_.locate(key);
 
         if (resource == null && resourceNames != null) {
         	Minimizer minimizer = null;
@@ -721,11 +721,13 @@ public class GreenScriptPlugin extends PlayPlugin {
 
         return null == resource ? null : resource.toString();
     }
+    
+    private static String key_(String key) {
+        return String.format("%s.%s", CACHE_KEY_BUFFER, key);
+    }
 
     private IBufferLocator bufferLocator_ = new IBufferLocator() {
-        private String key_(String key) {
-            return String.format("%s.%s", CACHE_KEY_BUFFER, key);
-        }
+
         @Override
         public BufferResource locate(String key) {
             return Cache.get(key_(key), BufferResource.class);
@@ -737,15 +739,28 @@ public class GreenScriptPlugin extends PlayPlugin {
         		builder.append(resourceName);
 			}
 
-            String key = UUID.nameUUIDFromBytes(builder.toString().getBytes()).toString() + extension;
+            final String key = UUID.nameUUIDFromBytes(builder.toString().getBytes()).toString() + extension;
 
             Logger.trace("Created key '%s' from resources '%s' and extension '%s'", key, builder.toString(), extension);
 
-            BufferResource buffer = new BufferResource(key);
-            Cache.set(key_(key), buffer);
-            return buffer;
+            // NOTE: Need to ensure the cache value is set after the buffer has been completely populated.
+            BufferResource bufferResource = new CachedBufferResource(key);
+            
+            return bufferResource;
         }
     };
+    
+    private static class CachedBufferResource extends BufferResource {
+    	public CachedBufferResource(String key) {
+    		super(key);
+    	}
+    	
+    	@Override
+    	protected void onWriterClose() {
+    		Logger.trace("Writing buffer resource with key '%s' and value '%s'", this.getKey(), this.toString());
+    		Cache.set(key_(this.getKey()), this);
+    	}
+    }
 
     private static String fetchProp_(Properties p, String key) {
         String val = p.getProperty(key);

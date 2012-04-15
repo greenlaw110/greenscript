@@ -36,7 +36,6 @@ public class ClosureCompressor implements ICompressor {
         CompilationLevel.SIMPLE_OPTIMIZATIONS.setOptionsForCompilationLevel(options);
     }
 
-    @Override
     public void compress(Reader r, Writer w) throws Exception {
         com.google.javascript.jscomp.Compiler compiler = new com.google.javascript.jscomp.Compiler();
         JSSourceFile file = JSSourceFile.fromInputStream("greenscript.js", new ReaderInputStream(r));

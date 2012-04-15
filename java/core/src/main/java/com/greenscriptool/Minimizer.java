@@ -81,7 +81,6 @@ public class Minimizer implements IMinimizer {
         init_(compressor, type);
     }
 
-    @Override
     public void enableDisableMinimize(boolean enable) {
         minimize_ = enable || ResourceType.CSS == type_;
         if (logger_.isDebugEnabled())
@@ -89,7 +88,6 @@ public class Minimizer implements IMinimizer {
         clearCache();
     }
 
-    @Override
     public void enableDisableCompress(boolean enable) {
         compress_ = enable;
         if (logger_.isDebugEnabled())
@@ -97,7 +95,6 @@ public class Minimizer implements IMinimizer {
         clearCache();
     }
 
-    @Override
     public void enableDisableCache(boolean enable) {
         useCache_ = enable;
         if (logger_.isDebugEnabled())
@@ -105,7 +102,6 @@ public class Minimizer implements IMinimizer {
         clearCache();
     }
 
-    @Override
     public void enableDisableInMemoryCache(boolean enable) {
         inMemory_ = enable;
         if (logger_.isDebugEnabled())
@@ -114,7 +110,6 @@ public class Minimizer implements IMinimizer {
         clearCache();
     }
 
-    @Override
     public void enableDisableProcessInline(boolean enable) {
         processInline_ = enable;
         if (logger_.isDebugEnabled())
@@ -127,23 +122,19 @@ public class Minimizer implements IMinimizer {
         // verifyResource_ = verify;
     }
 
-    @Override
     public boolean isMinimizeEnabled() {
         // now css type resource is always minimized
         return minimize_ || ResourceType.CSS == type_;
     }
 
-    @Override
     public boolean isCompressEnabled() {
         return compress_;
     }
 
-    @Override
     public boolean isCacheEnabled() {
         return useCache_;
     }
 
-    @Override
     public void setResourceDir(String dir) {
         checkInitialize_(false);
         if (rootDir_ == null) throw new IllegalStateException("rootDir need to be intialized first");
@@ -158,7 +149,6 @@ public class Minimizer implements IMinimizer {
         if (!f.isDirectory()) throw new IllegalArgumentException("not a directory");
     }
 
-    @Override
     public void setRootDir(String dir) {
         checkInitialize_(false);
         if (fl_ == null) throw new IllegalStateException("file locator need to initialized first");
@@ -169,14 +159,12 @@ public class Minimizer implements IMinimizer {
             logger_.debug(String.format("root dir set to %1$s", dir));
     }
 
-    @Override
     public void setUrlContextPath(String ctxPath) {
         if (null == ctxPath) throw new NullPointerException();
         if (ctxPath.endsWith("/")) ctxPath = ctxPath.substring(0, ctxPath.length() - 1);
         ctxPath_ = ctxPath;
     }
 
-    @Override
     public void setCacheDir(File dir) {
         // comment below as inmemory configuration does not require dir to be exists
         // this is relevant when deploy app on readonly file system like heroku and gae
@@ -186,7 +174,6 @@ public class Minimizer implements IMinimizer {
         cache_ = new FileCache(dir);
     }
 
-    @Override
     public void setResourceUrlRoot(String urlRoot) {
         if (ctxPath_ == null) throw new IllegalStateException("ctxPath must be intialized first");
         if (!urlRoot.startsWith("/"))
@@ -200,7 +187,6 @@ public class Minimizer implements IMinimizer {
             logger_.debug(String.format("url root set to %1$s", urlRoot));
     }
 
-    @Override
     public void setResourceUrlPath(String urlPath) {
         checkInitialize_(false);
         if (null == resourceUrlRoot_) {
@@ -217,7 +203,6 @@ public class Minimizer implements IMinimizer {
             logger_.debug(String.format("url path set to %1$s", urlPath));
     }
 
-    @Override
     public void setCacheUrlPath(String urlPath) {
         checkInitialize_(false);
         if (null == resourceUrlRoot_) {
@@ -234,7 +219,6 @@ public class Minimizer implements IMinimizer {
             logger_.debug(String.format("cache url root set to %1$s", urlPath));
     }
 
-    @Override
     public void clearCache() {
         cache_.clear();
         processCache2_.clear();
@@ -243,7 +227,6 @@ public class Minimizer implements IMinimizer {
 
     private IFileLocator fl_ = FileResource.defFileLocator;
 
-    @Override
     public void setFileLocator(IFileLocator fileLocator) {
         if (null == fileLocator)
             throw new NullPointerException();
@@ -252,7 +235,6 @@ public class Minimizer implements IMinimizer {
 
     private IBufferLocator bl_ = new BufferLocator();
 
-    @Override
     public void setBufferLocator(IBufferLocator bufferLocator) {
         if (null == bufferLocator)
             throw new NullPointerException();
@@ -261,7 +243,6 @@ public class Minimizer implements IMinimizer {
 
     private IRouteMapper rm_ = null;
 
-    @Override
     public void setRouteMapper(IRouteMapper routeMapper) {
         if (null == routeMapper)
             throw new NullPointerException();
@@ -294,7 +275,6 @@ public class Minimizer implements IMinimizer {
         return files;
     }
 
-    @Override
     public long getLastModified(File file) {
         long l = file.lastModified();
         if (ResourceType.CSS == type_) {
@@ -306,7 +286,6 @@ public class Minimizer implements IMinimizer {
         return l;
     }
 
-    @Override
     public void checkCache() {
         for(List<String> l: processCache_.keySet()) {
             for (String s: l) {
@@ -330,7 +309,6 @@ public class Minimizer implements IMinimizer {
      * A convention used by this minimizer is resource name suffix with
      * "_bundle". For any resource with the name suffix with "_bundle"
      */
-    @Override
     public List<String> process(List<String> resourceNames) {
         checkInitialize_(true);
         if (resourceNames.isEmpty())
@@ -376,7 +354,7 @@ public class Minimizer implements IMinimizer {
     }
 
     private ConcurrentMap<List<String>, List<String>> processCache2_ = new ConcurrentHashMap<List<String>, List<String>>();
-    @Override
+
     public List<String> processWithoutMinimize(List<String> resourceNames) {
         checkInitialize_(true);
         if (resourceNames.isEmpty())
@@ -454,7 +432,6 @@ public class Minimizer implements IMinimizer {
         }
     }
 
-    @Override
     public String processInline(String content) {
         if (!processInline_)
             return content;
@@ -474,7 +451,6 @@ public class Minimizer implements IMinimizer {
         }
     }
 
-    @Override
     public String processStatic(File file) {
         String content = null;
         try {

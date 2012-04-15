@@ -8,12 +8,10 @@ import java.util.UUID;
 public class BufferLocator implements IBufferLocator {
     Map<String, BufferResource> buffers = new HashMap<String, BufferResource>();
     
-    @Override
     public BufferResource locate(String key) {
         return this.buffers.get(key);
     }
     
-    @Override
     public BufferResource newBuffer(List<String> resourceNames, String extension) {
         String key = UUID.randomUUID().toString() + extension;
         BufferResource buffer = new BufferResource(key);

@@ -99,12 +99,10 @@ public class DependenceManager implements IDependenceManager {
         }
     }
 
-    @Override
     public List<String> comprehend(Collection<String> resourceNames) {
         return comprehend(resourceNames, false);
     }
 
-    @Override
     public List<String> comprehend(Collection<String> resourceNames,
             boolean withDefault) {
         if (resourceNames.isEmpty() && !withDefault)
@@ -155,12 +153,10 @@ public class DependenceManager implements IDependenceManager {
         return retList;
     }
 
-    @Override
     public List<String> comprehend(String resourceNames) {
         return comprehend(resourceNames, false);
     }
 
-    @Override
     public List<String> comprehend(String resourceNames, boolean withDefault) {
         if (null == resourceNames)
             return comprehend(new ArrayList<String>(), withDefault);
@@ -169,12 +165,10 @@ public class DependenceManager implements IDependenceManager {
         return comprehend(l, withDefault);
     }
 
-    @Override
     public List<String> comprehend() {
         return comprehend(DEFAULT, false);
     }
 
-    @Override
     public final void addDependency(String dependent,
             Collection<String> dependsOn) {
         createNode_(dependent, dependsOn);
@@ -339,7 +333,6 @@ public class DependenceManager implements IDependenceManager {
             return sb.toString();
         }
 
-        @Override
         public int compareTo(Node o) {
             if (null == o)
                 return -1;

@@ -21,8 +21,7 @@ public class GreenScriptCompressor implements ICompressor {
    public GreenScriptCompressor(ResourceType type) {
       type_ = type;
    }
-   
-   @Override
+
    public void compress(Reader r, Writer w) throws Exception {
       if (null == r || null == w)
          throw new NullPointerException();
