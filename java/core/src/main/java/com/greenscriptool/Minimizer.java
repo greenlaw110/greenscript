@@ -715,7 +715,20 @@ public class Minimizer implements IMinimizer {
 
         try {
             Matcher m = P_URL.matcher(s);
-            s = m.replaceAll("url(" + prefix + "$1)");
+            
+            
+            StringBuffer buffer=new StringBuffer();  
+            while (m.find())  
+            {  
+                if(m.group().indexOf("data:")==-1)  
+                {   
+                    m.appendReplacement(buffer, "url(" + prefix + "$1)");  
+                } 
+            }  
+            m.appendTail(buffer);
+            s = buffer.toString();
+            
+//            s = m.replaceAll("url(" + prefix + "$1)");
             return s;
         } catch (Throwable e) {
             System.err.println("Error process relative URL: " + fn);
