@@ -18,13 +18,13 @@
         @greenscript.output_(nameList, deps = deps, all = all, media = null, browser = null, id = id, charset = charset, type = type, sm = sm)
 
         @// default browser with non-default media
-        @each String med: sm.getMedias(null) {
+        @for(String med: sm.getMedias(null)) {
             @greenscript.output_(nameList, deps = deps, all = all, media = med, browser = null, id = id, charset = charset, type = type, sm = sm)
         }
 
         @// non-default browsers
-        @each String bro: sm.getBrowsers() {
-            @each String med: sm.getMedias(bro) {
+        @for(String bro: sm.getBrowsers()) {
+            @for(String med: sm.getMedias(bro)) {
                 @greenscript.output_(nameList, deps = deps, all = all, media = med, browser = bro, id = id, charset = charset, type = type, sm = sm)
             }
         }

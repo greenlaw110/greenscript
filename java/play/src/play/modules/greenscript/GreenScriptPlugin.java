@@ -59,6 +59,9 @@ import com.greenscriptool.utils.IBufferLocator;
  * Define a Playframework plugin
  *
  * @author greenlaw110@gmail.com
+ * @version 1.2.9 2012-06-05
+ *          fix bug: https://github.com/greenlaw110/greenscript/issues/50
+ *          Support configure js compressor
  * @version 1.2.8 2012-02-16
  *          fix bug: https://github.com/greenlaw110/greenscript/issues/36
  *          support coffeescript
@@ -84,7 +87,7 @@ import com.greenscriptool.utils.IBufferLocator;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.8a";
+    public static final String VERSION = "1.2.9";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -473,15 +476,30 @@ public class GreenScriptPlugin extends PlayPlugin {
         for (VirtualFile vf: Play.roots) {
             VirtualFile conf = vf.child("conf/greenscript.conf");
             if (conf.exists()) {
-                trace_("loading dependency configuration from %1$s", conf.getRealFile().getAbsolutePath());
+                //info_("loading dependency configuration from %1$s", conf.getRealFile().getAbsolutePath());
                 try {
-                    p.load(new BufferedInputStream(conf.inputstream()));
+                    Properties p0 = new Properties();
+                    p0.load(new BufferedInputStream(conf.inputstream()));
+                    for (String k: p0.stringPropertyNames()) {
+                        //info_("loading property: %s", k);
+                        if (!p.containsKey(k)) {
+                            info_("loading property for %s: %s", k, p0.get(k));
+                            p.put(k, p0.get(k));
+                        } else {
+                            String v = p.getProperty(k);
+                            String v0 = p0.getProperty(k);
+                            v = v + "," + v0;
+                            //info_("loading duplicate property for %s: %s", k, v);
+                            p.setProperty(k, v);
+                        }
+                    }
                 } catch (Exception e) {
                     throw new UnexpectedException("error loading conf/greenscript.conf");
                 }
             }
         }
         this.configFiles_ = this.currentConfigFiles();
+        //info_("greenscript.conf loaded: %s", p);
         jsD_ = new DependenceManager(loadDepProp_(p, "js"));
         cssD_ = new DependenceManager(loadDepProp_(p, "css"));
 
