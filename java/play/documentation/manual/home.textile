@@ -248,10 +248,16 @@ greenscript.cache=false
 greenscript.cache.inmemory=true
 #
 # Enable/Disable LESS support
-#   Once LESS support enabled, GreenScript will try to compile css file
+#   Once LESS support is enabled, GreenScript will try to compile css file
 #   using LESS CSS engine before processing it. By default this option
 #   is turned off
 greenscript.less.enabled=false
+# Enable/Disable Coffeescript support
+#   Once Coffeescript support is enabled, GreenScript will try to compile
+#   the .coffee file to Javascript.
+#   By default this option is turned off.
+greenscript.coffee.enabled=false
+#
 #
 # Enable/Disable inline script processing
 #   Once this configuration is turned on, GreenScript will try to process inline code
