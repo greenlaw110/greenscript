@@ -116,12 +116,14 @@ public class MinimizerTest extends BaseTest {
         assertTrue(l.get(0).startsWith(cacheUrlPath));
         assertEquals("http://abc.com/a.js", l.get(1));
         
-        // cache is not enabled, so the 2 processes on same name list return different file name
+        // - NO LONGER VALID: cache is not enabled, so the 2 processes on same name list return different file name
+        // - IT USE NEW METHOD TO GENERATE UUID FROM THE LIST CONTENT, SO THE NAME WILL ALWAYS BE THE SAME
         p_("a,b", jm);
         String s0 = l.get(0);
         p_("a,b", jm);
         String s1 = l.get(0);
-        assertFalse(s0.equals(s1));
+        //assertFalse(s0.equals(s1));
+        assertTrue(s0.equals(s1));
         
         // enable cache and see again
         jm.enableDisableCache(true);

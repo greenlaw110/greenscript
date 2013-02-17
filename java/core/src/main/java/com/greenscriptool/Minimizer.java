@@ -1,40 +1,22 @@
 package com.greenscriptool;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.inject.Inject;
-
+import com.asual.lesscss.LessEngine;
+import com.asual.lesscss.LessException;
 import com.greenscriptool.utils.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import com.asual.lesscss.LessEngine;
-import com.asual.lesscss.LessException;
 import org.jcoffeescript.JCoffeeScriptCompileException;
 import org.jcoffeescript.JCoffeeScriptCompiler;
+
+import javax.inject.Inject;
+import java.io.*;
+import java.net.URLEncoder;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Minimizer implements IMinimizer {
 
@@ -72,7 +54,7 @@ public class Minimizer implements IMinimizer {
     }
 
     public Minimizer(ResourceType type) {
-        ICompressor compressor = type == ResourceType.CSS ? new YUICompressor(type) : new ClosureCompressor(type);
+        ICompressor compressor = type == ResourceType.CSS ? new YUICompressor(type) : new SimpleJSCompressor(type);
         init_(compressor, type);
     }
 
@@ -270,6 +252,7 @@ public class Minimizer implements IMinimizer {
 
     private static final Pattern P_IMPORT = Pattern.compile("^\\s*@import\\s*\"(.*?)\".*");
     private Map<String, Set<File>> importsCache_ = new HashMap<String, Set<File>>();
+
     private Set<File> imports_(File file) {
         String key = "less_imports_" + file.getPath() + file.lastModified();
 
@@ -278,12 +261,14 @@ public class Minimizer implements IMinimizer {
             files = new HashSet<File>();
             try {
                 List<String> lines = fileToLines_(file);
-                for (String line: lines) {
+                for (String line : lines) {
                     Matcher m = P_IMPORT.matcher(line);
                     while (m.find()) {
                         File f = new File(file.getParentFile(), m.group(1));
-                        files.add(f);
-                        files.addAll(imports_(f));
+                        if (f.canRead()) {
+                            files.add(f);
+                            files.addAll(imports_(f));
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -299,7 +284,7 @@ public class Minimizer implements IMinimizer {
         long l = file.lastModified();
         if (ResourceType.CSS == type_) {
             // try to get last modified of all @imported files
-            for (File f: imports_(file)) {
+            for (File f : imports_(file)) {
                 l = Math.max(l, f.lastModified());
             }
         }
@@ -308,8 +293,8 @@ public class Minimizer implements IMinimizer {
 
     @Override
     public void checkCache() {
-        for(List<String> l: processCache_.keySet()) {
-            for (String s: l) {
+        for (List<String> l : processCache_.keySet()) {
+            for (String s : l) {
                 if (isCDN_(s)) continue;
                 File f = getFileFromURL_(s);
                 if (null != f && f.exists()) {
@@ -376,6 +361,7 @@ public class Minimizer implements IMinimizer {
     }
 
     private ConcurrentMap<List<String>, List<String>> processCache2_ = new ConcurrentHashMap<List<String>, List<String>>();
+
     @Override
     public List<String> processWithoutMinimize(List<String> resourceNames) {
         checkInitialize_(true);
@@ -523,7 +509,7 @@ public class Minimizer implements IMinimizer {
     }
 
     public IResource minimize(String resourceNames) {
-    	return minimize(decodeResourceNames(resourceNames));
+        return minimize(decodeResourceNames(resourceNames));
     }
 
     private IResource minimize(List<String> resourceNames) {
@@ -550,7 +536,7 @@ public class Minimizer implements IMinimizer {
                 try {
                     s = compileLess_(s);
                 } catch (LessException e) {
-                    logger_.warn("Error compile less content: " +  e.getMessage(), e);
+                    logger_.warn("Error compile less content: " + e.getMessage(), e);
                 }
                 if (compress_) {
                     try {
@@ -601,63 +587,63 @@ public class Minimizer implements IMinimizer {
         cache.put(resourceNames, fn);
 
         try {
-        	StringBuilder builder = new StringBuilder();
-        	builder.append(cacheUrlPath_);
-        	builder.append(fn);
+            StringBuilder builder = new StringBuilder();
+            builder.append(cacheUrlPath_);
+            builder.append(fn);
 
-        	if (this.resourcesParam_ != null) {
-        		String resourcesParamValue = this.encodeResourceNames(resourceNames);
-        		if (resourcesParamValue != null) {
-        			builder.append("?");
-        			builder.append(this.resourcesParam_);
-        			builder.append("=");
-        			builder.append(URLEncoder.encode(resourcesParamValue, "utf8"));
-        		}
-        	}
-			return builder.toString();
-		} catch (UnsupportedEncodingException e) {
-			throw new IllegalStateException(e);
-		}
+            if (this.resourcesParam_ != null) {
+                String resourcesParamValue = this.encodeResourceNames(resourceNames);
+                if (resourcesParamValue != null) {
+                    builder.append("?");
+                    builder.append(this.resourcesParam_);
+                    builder.append("=");
+                    builder.append(URLEncoder.encode(resourcesParamValue, "utf8"));
+                }
+            }
+            return builder.toString();
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private String encodeResourceNames(List<String> resourceNames) {
-    	StringBuilder builder = new StringBuilder();
-    	for (String resourceName : resourceNames) {
-    		resourceName = StringUtils.stripToNull(resourceName);
-    		if (resourceName != null) {
-	    		if (builder.length() > 0) {
-	    			builder.append(',');
-	    		}
-				if (resourceName.startsWith(resourceUrlPath_)) {
-					resourceName = resourceName.substring(resourceUrlPath_.length());
-				}
-				builder.append(resourceName);
-    		}
-		}
-    	return (builder.length() > 0) ? builder.toString() : null;
+        StringBuilder builder = new StringBuilder();
+        for (String resourceName : resourceNames) {
+            resourceName = StringUtils.stripToNull(resourceName);
+            if (resourceName != null) {
+                if (builder.length() > 0) {
+                    builder.append(',');
+                }
+                if (resourceName.startsWith(resourceUrlPath_)) {
+                    resourceName = resourceName.substring(resourceUrlPath_.length());
+                }
+                builder.append(resourceName);
+            }
+        }
+        return (builder.length() > 0) ? builder.toString() : null;
     }
 
     private List<String> decodeResourceNames(String resourceNames) {
-    	String[] names = resourceNames.split("[,]");
-    	if (names.length == 0) {
-    		return Collections.emptyList();
-    	}
+        String[] names = resourceNames.split("[,]");
+        if (names.length == 0) {
+            return Collections.emptyList();
+        }
 
-    	List<String> l = new ArrayList<String>(names.length);
+        List<String> l = new ArrayList<String>(names.length);
 
-		for (String name : names) {
-			name = StringUtils.stripToNull(name);
-			if (name != null) {
-				if (!name.startsWith("/")) {
-					name = resourceUrlPath_ + name;
-				}
-				if (!l.contains(name)) {
-					l.add(name);
-				}
-			}
-		}
+        for (String name : names) {
+            name = StringUtils.stripToNull(name);
+            if (name != null) {
+                if (!name.startsWith("/")) {
+                    name = resourceUrlPath_ + name;
+                }
+                if (!l.contains(name)) {
+                    l.add(name);
+                }
+            }
+        }
 
-		return l;
+        return l;
     }
 
     public static final String SYS_PROP_LESS_ENABLED = "greenscript.less.enabled";
@@ -671,6 +657,7 @@ public class Minimizer implements IMinimizer {
     }
 
     public static final String SYS_PROP_COFFEE_ENABLED = "greenscript.coffee.enabled";
+
     private boolean coffeeEnabled_() {
         if (ResourceType.JS != type_) return false;
         boolean b = Boolean.parseBoolean(System.getProperty(SYS_PROP_COFFEE_ENABLED, "false"));
@@ -686,12 +673,13 @@ public class Minimizer implements IMinimizer {
      * @param fn the original file name
      */
     private static final Pattern P_URL = Pattern.compile("url\\(['\"]?([^/'\"][^'\"]*?)['\"]?\\)", Pattern.CASE_INSENSITIVE | Pattern.CANON_EQ | Pattern.UNICODE_CASE);
+
     private String processRelativeUrl_(String s, String fn) throws IOException {
         if (ResourceType.CSS != type_)
             throw new IllegalStateException("not a css minimizer");
 
         if (this.rm_ != null) {
-        	fn = this.rm_.route(fn);
+            fn = this.rm_.route(fn);
         }
 
         /*
@@ -710,7 +698,7 @@ public class Minimizer implements IMinimizer {
         }
 
         if (this.rm_ != null) {
-        	prefix = this.rm_.reverse(prefix);
+            prefix = this.rm_.reverse(prefix);
         }
 
         try {
@@ -749,6 +737,7 @@ public class Minimizer implements IMinimizer {
     }
 
     private ConcurrentMap<File, Long> lastModifiedCache_ = new ConcurrentHashMap<File, Long>();
+
     private void merge_(File file, Writer out, String originalFn) {
         if (logger_.isTraceEnabled())
             logger_.trace("starting to minimize resource: " + file.getName());
@@ -834,16 +823,16 @@ public class Minimizer implements IMinimizer {
     }
 
     private String getUrl_(String resourceName) {
-    	String url = null;
+        String url = null;
 
         if (!"".equals(ctxPath_) && resourceName.startsWith(ctxPath_)) {
-        	url = resourceName;
+            url = resourceName;
         } else if (resourceName.startsWith("/")) {
             String s = ctxPath_ + resourceName;
             if (s.startsWith(resourceUrlRoot_)) {
-            	url = s;
+                url = s;
             } else {
-            	url = resourceUrlRoot_ + resourceName.substring(1, resourceName.length());
+                url = resourceUrlRoot_ + resourceName.substring(1, resourceName.length());
             }
         } else {
             url = resourceUrlPath_ + resourceName;
@@ -852,9 +841,9 @@ public class Minimizer implements IMinimizer {
         return (this.rm_ != null) ? this.rm_.reverse(url) : url;
     }
 
-	private File getFileFromURL_(String url) {
-		return this.getFile_((this.rm_ != null) ? this.rm_.route(url) : url);
-	}
+    private File getFileFromURL_(String url) {
+        return this.getFile_((this.rm_ != null) ? this.rm_.route(url) : url);
+    }
 
     private File getFile_(String resourceName) {
         if (resourceName.startsWith("/") && !resourceName.startsWith(ctxPath_)) {
@@ -873,7 +862,7 @@ public class Minimizer implements IMinimizer {
         } else {
             path = resourcePath_ + "/" + fn;
         }
-        for (String ext: type_.getAllExtensions()) {
+        for (String ext : type_.getAllExtensions()) {
             String p = fn.endsWith(ext) ? path : path + ext;
             File f = fl_.locate(p);
             if (null != f) return f;
@@ -887,7 +876,7 @@ public class Minimizer implements IMinimizer {
         copy_(new FileReader(file), out);
     }
 
-    public static void copy_(Reader in, Writer out)  {
+    public static void copy_(Reader in, Writer out) {
         String line = null;
         BufferedReader r = null;
         try {
@@ -900,7 +889,9 @@ public class Minimizer implements IMinimizer {
             throw new RuntimeException(e);
         } finally {
             if (null != r)
-                try {r.close();} catch (IOException e) {/*ignore*/}
+                try {
+                    r.close();
+                } catch (IOException e) {/*ignore*/}
         }
     }
 
@@ -937,14 +928,15 @@ public class Minimizer implements IMinimizer {
     }
 
     private final static Pattern P_CDN_PREFIX = Pattern.compile("^https?:");
+
     private final boolean isCDN_(String resourceName) {
         if (null == resourceName) return false;
         Matcher m = P_CDN_PREFIX.matcher(resourceName);
         return m.find();
     }
 
-	public void setResourcesParam(String resourcesParam_) {
-		this.resourcesParam_ = resourcesParam_;
-	}
+    public void setResourcesParam(String resourcesParam_) {
+        this.resourcesParam_ = resourcesParam_;
+    }
 
 }

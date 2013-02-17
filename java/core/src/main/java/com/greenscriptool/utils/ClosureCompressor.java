@@ -33,7 +33,7 @@ public class ClosureCompressor implements ICompressor {
         if (ResourceType.JS != type) throw new IllegalArgumentException("ClosureCompressor does not support CSS compression");
         type_ = type;
         com.google.javascript.jscomp.Compiler.setLoggingLevel(Level.FINE);
-        CompilationLevel.SIMPLE_OPTIMIZATIONS.setOptionsForCompilationLevel(options);
+        CompilationLevel.WHITESPACE_ONLY.setOptionsForCompilationLevel(options);
     }
 
     @Override

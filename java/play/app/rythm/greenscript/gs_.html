@@ -11,23 +11,19 @@
 
     boolean _output = all || deps || ((null != output) && ((output instanceof Boolean) ? (Boolean)output : !"false".equals(output.toString())));
 }
-
+@compact(){
 @if (_output) {
     @if (all) {
         @// default browser with default media
         @greenscript.output_(nameList, deps = deps, all = all, media = null, browser = null, id = id, charset = charset, type = type, sm = sm)
-
         @// default browser with non-default media
         @for(String med: sm.getMedias(null)) {
+            @greenscript.output_(nameList, deps = deps, all = all, media = med, browser = null, id = id, charset = charset, type = type, sm = sm)
             @greenscript.output_(nameList, deps = deps, all = all, media = med, browser = null, id = id, charset = charset, type = type, sm = sm)
         }
 
         @// non-default browsers
-        @for(String bro: sm.getBrowsers()) {
-            @for(String med: sm.getMedias(bro)) {
-                @greenscript.output_(nameList, deps = deps, all = all, media = med, browser = bro, id = id, charset = charset, type = type, sm = sm)
-            }
-        }
+        @for(String bro: sm.getBrowsers()) {@for(String med: sm.getMedias(bro)) {@greenscript.output_(nameList, deps = deps, all = all, media = med, browser = bro, id = id, charset = charset, type = type, sm = sm)}}
     } else {
         @greenscript.output_(nameList, deps = deps, all = all, media = media, browser = browser, id = id, charset = charset, type = type, sm = sm)
     }
@@ -39,7 +35,6 @@
         @greenscript.openTag_(type)
         @renderBody()
         @greenscript.closeTag_(type)
-    } else {
-        @{ sm.declareInline(_body.toString(), priority) }@
-    }
+    } else {@{ sm.declareInline(_body.render(), priority) }@}
+}
 }

@@ -2,22 +2,15 @@
 #{set title:'Home' /}
 
 *{
-  In order to make the following inline css code running, you need to 
+  In order to make the following inline css code running, you need to
   set "greenscript.inline.process" to true in application.conf file.
-  
+
   But doing this might suffer the runtime performance because each time
   the view file get processed will trigger LESS engine compilation.
-  
+
   A better way should be #{greenscript.css 'Application/index'/}, which
   reference to the static LESS enabled css file.
 }*
-#{greenscript.css}
-#{greenscript.@import 'lib/color'/}
-#showcase {
-  color: @fg;
-  background-color: @bg;
-}
-#{/greenscript.css}
 
 #{greenscript.js 'test.coffee'/}
 
