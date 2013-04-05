@@ -3,6 +3,10 @@ h1. GreenScript module
 The GreenScript module help you to manage javascript and CSS dependencies and do minimizing work in the same time.
 <script type="text/javascript" src="http://www.ohloh.net/p/485839/widgets/project_users_logo.js"></script>
 
+h2. <a>What's new for v1.2.11</a>
+
+* Upgrade lesscss-engine to 1.3.0
+
 h2. <a>What's new for v1.2.8b</a>
 
 * Update rythm tags to rythm v0.9.8 version

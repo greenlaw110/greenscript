@@ -9,7 +9,7 @@
     <groupId>com.github.greenlaw110.greenscript</groupId>
     <artifactId>greenscript-core</artifactId>
     <packaging>jar</packaging>
-    <version>1.2.9c</version>
+    <version>1.2.9d</version>
 
     <name>GreenScript Core</name>
     <description>A Java package to manage and process Web Resources (Javascript/CSS)</description>
@@ -53,7 +53,7 @@
         <dependency>
             <groupId>com.asual.lesscss</groupId>
             <artifactId>lesscss-engine</artifactId>
-            <version>1.1.5</version>
+            <version>1.3.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.mozilla</groupId>

@@ -1,17 +1,10 @@
 package com.greenscriptool;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-
-import javax.inject.Inject;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import javax.inject.Inject;
+import java.util.*;
 
 /**
  * The implementation of {@link IRenderSession} interface
@@ -155,7 +148,7 @@ public class RenderSession implements IRenderSession {
     }
 
     private String canonical_(String s) {
-        if (null == s) return DEFAULT;
+        if (null == s || "".equals(s.trim())) return DEFAULT;
         return s.trim().replaceAll("\\s+", " ");
     }
 
