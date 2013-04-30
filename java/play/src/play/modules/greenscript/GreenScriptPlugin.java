@@ -20,8 +20,6 @@ import play.mvc.Http.Request;
 import play.mvc.Http.Response;
 import play.mvc.Router;
 import play.mvc.Scope.Flash;
-import play.mvc.results.NotFound;
-import play.mvc.results.RenderStatic;
 import play.templates.Template;
 import play.utils.Utils;
 import play.vfs.VirtualFile;
@@ -42,7 +40,7 @@ import java.util.regex.Pattern;
  */
 public class GreenScriptPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.2.11";
+    public static final String VERSION = "1.2.11b";
 
     private static String msg_(String msg, Object... args) {
         return String.format("GreenScript-" + VERSION + "> %1$s",
@@ -302,6 +300,11 @@ public class GreenScriptPlugin extends PlayPlugin {
             final long l = file.lastModified();
             final String etag = "\"" + l + "-" + file.hashCode() + "\"";
             Map<String, Http.Header> headers = request.headers;
+            if (fn.endsWith(".js")) {
+                response.setContentTypeIfNotSet("text/javascript");
+            } else if (fn.endsWith(".css")) {
+                response.setContentTypeIfNotSet("text/css");
+            }
             if (headers.containsKey("if-none-match") && headers.containsKey("if-modified-since")) {
                 if ("GET".equalsIgnoreCase(request.method)) {
                     response.status = Http.StatusCode.NOT_MODIFIED;
@@ -367,7 +370,13 @@ public class GreenScriptPlugin extends PlayPlugin {
         if (Play.mode == Mode.PROD) {
             resp.cacheFor("1h");
         }
+        if (type == ResourceType.CSS) {
+            resp.setContentTypeIfNotSet("text/css");
+        } else if (type == ResourceType.JS) {
+            resp.setContentTypeIfNotSet("text/javascript");
+        }
         IMinimizer min = type == ResourceType.CSS ? cssM_ : jsM_;
+        
         long l = min.getLastModified(file.getRealFile());
         final String etag = "\"" + l + "-" + file.hashCode() + "\"";
         if (!req.isModified(etag, l)) {
@@ -382,10 +391,8 @@ public class GreenScriptPlugin extends PlayPlugin {
                 return false;
             }
         } else {
-
             try {
                 String content = min.processStatic(file.getRealFile());
-                resp.contentType = type == ResourceType.JS ? "text/javascript" : "text/css";
                 resp.status = 200;
                 resp.print(content);
                 resp.setHeader(Names.LAST_MODIFIED, Utils.getHttpDateFormatter().format(new Date(l + 1000)));
