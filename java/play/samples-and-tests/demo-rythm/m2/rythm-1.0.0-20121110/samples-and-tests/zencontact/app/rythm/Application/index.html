@@ -1,0 +1,13 @@
+@args Date now
+
+@extends("main")
+
+<p id="time">
+    <span>@now.format("EEEE',' MMMM dd',' yyyy")</span>@now.format("hh'h' MM'mn' ss's'")
+</p>
+
+<script type="text/javascript" charset="@_response_encoding">
+    setInterval(function() {
+        $('section').load('@url(index()) #time')
+    }, 1000)
+</script>

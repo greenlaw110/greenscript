@@ -1,0 +1,81 @@
+h1. String Interpolation Mode
+
+p(note). This is *NOT* a Play specific feature.
+
+Rythm (starts from v1.0.0-20120630) provides an new feature called SIM, the "String interpolation mode". With this feature one can use Rythm in a most lightweight way.
+
+bc. String result = Rythm.render("Hello @who!", "Rythm");
+// the result is "Hello Rythm!"
+
+The above code is passing render arguments by position, you can also pass arguments by name:
+
+bc. Map<String, Object> args = new HashMap<String, Object>();
+args.put("who", "Rythm");
+String result = Rythm.render("Hello @who!", args);
+// the result is "Hello Rythm!"
+
+As a comparison, previously you need a much more verbose way to do the same thing:
+
+bc. String result = Rythm.render("@args String who;Hello @who!", "Rythm");
+
+As you can see with String interpolation mode, you can omit the argument declaration. Might not looks a big deal at first glance, but it literally make calling to Rythm method costs nothing more than a @String.format()@ call, while you get more than @String.format()@ in that first you have a faster version (except the first call), and second, you can pass in render arguments by name.
+
+h3. <a name="array">Reference to an array in SIM</a>
+
+Start from v1.0.0-20120703, it's possible to reference to an array in SIM:
+
+bc. Long[] la = {1L, 0L};
+String result = Rythm.render("first item is @la[0], second item is @la[1]", la);
+
+As you might noticed that I am using @Long[]@ instead of @long[]@ to declare the array type. This is because Rythm cannot infer the type and thus put everything to type @Object@, so you must NOT use the primary type to make it work with SIM. Also note complex expression like follows will not work with SIM:
+
+bc. Long[] la = {1L, 0L};
+String result = Rythm.render("@(la[0] * la[1])", la); // Won't work
+String result = Rythm.render("@args Long[]la;@(la[0] * la[1])", la); // this works
+
+h2. What you don't have in SIM (String interpolation mode)?
+
+SIM is not aimed to be used in all cases. Rather it is suggest to use SIM only in very simple templates, in short where you can use @String.format()@. For comprehensive templates you still need to declare render arguments using <code>@args</code> keyword. There are the following limitations with SIM:
+
+*Complex expression cannot be used in SIM*. Since all variables are treated as @Object@ type, you cannot invoke any specific class fields or methods other than @Object@.
+
+bc. Rythm.render("the name is @user.username", user); // bad
+Rythm.render("the name is @name", user.username); // good
+Rythm.render("@args User user;the name is @user.username", user); // good
+Rythm.render("the sum is @(left + right)", left, right); // bad
+Rythm.render("the sum is @sum", left + right); // good
+Rythm.render("@args int left, int right;the sum is @(left + right)", left, right); // good
+
+*Keywords you cannot use in SIM mode*:
+
+# <a href="reference#args">@args</a>, declare template argument variables
+# <a href="reference#extends">@extends</a>, extends a layout template
+# <a href="reference#section">@section</a>, define a template part to be inserted in the layout template
+# <a href="reference#render">@render</a>, used in layout template to render a template section defined in sub template
+# <a href="reference#doLayout">@doLayout</a>, same as <code>@render</code>
+# <a href="reference#doBody">@doBody</a>, call back tag body
+# <a href="reference#include">@include</a>, include another template content in place
+# <a href="reference#set">@set</a>, set template variable to be fetched by layout template
+# <a href="reference#get">@get</a>, get the template variable set in the sub template
+# <a href="reference#expand">@expand</a>, execute/expand an macro
+# <a href="reference#exec">@exec</a>, same as <code>@expand@</code>
+# <a href="reference#macro">@macro</a>, define an macro
+# <a href="reference#def">@def</a>, define an inline tag
+# <a href="reference#tag">@tag</a>, same as <code>@def</code>
+# All extended keywords including the following defined in PlayRythm plugin
+##  <a href="reference#url">@url</a>, reverse url lookup
+##  <a href="reference#fullUrl">@fullUrl</a>, absolute reverse url lookup
+##  <a href="reference#msg">@msg</a>, message lookup
+
+h2. How to specify Rythm to enter SIM to render the template?
+
+You don't specify Rythm to enter SIM, Rythm is intelligent enough to enter SIM automatically if it found there is no keywords specified above in your template.
+
+h2. How to specify Rythm **NOT** to enter SIM?
+
+As states above whenever you used any of the keywords listed above, Rythm will use normal mode to render the template. However in certain case you might want to explicitly ask Rythm not to use SIM by adding a <code>@nosim()</code> into the template at anywhere.
+
+h2. <a name="resource">See also</a>
+
+# %(next)"To string mode":to_string%
+# "Rythm Manual Home Page":home

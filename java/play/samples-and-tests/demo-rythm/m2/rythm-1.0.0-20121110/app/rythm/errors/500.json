@@ -1,0 +1,14 @@
+@args Exception exception
+
+@{
+    String message = "";
+    if (null != exception) {
+        message = exception.getMessage();
+        message = null == message ? "" : message.replace("'", "\'");
+    }
+}@
+
+{
+    type:   '@(null == exception ? "" : exception.getClass().getName())',
+    message: '@message'
+}

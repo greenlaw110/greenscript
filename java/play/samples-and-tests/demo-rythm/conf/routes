@@ -1,0 +1,32 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+GET     /                                       Demo.index
+GET     /s										Demo.singlePage
+GET     /t                                      Demo.test
+GET     /test                                   Demo.test
+
+POST    /post                                       Demo.post
+
+# Map static resources from the /app/public folder to the /public path
+GET /public/ staticDir:public
+GET /js/ staticDir:public/javascripts
+GET /css/ staticDir:public/stylesheets
+GET /img/ staticDir:public/images
+
+
+##
+# IMPROTANT: you cannot map static gs (compressed file) dir and the greenscript 
+# module to the same URL !!! So the follow line won't work for us
+#
+# GET /gs/ staticDir:public/gs
+# GET /compressed/{key} greenscript.Service.getInMemoryCache
+# GET /compressed/ staticDir:public/gs
+
+# GreenScript
+* /gsconf module:greenscript
+
+# Catch all
+*       /{controller}/{action}                  {controller}.{action}

@@ -1,0 +1,55 @@
+@extends(main)
+@set(title:"PlayRythm GAE mode demo")
+
+<p>The application demonstrate the effect when <code>rythm.gae</code> set to true</p>
+<ol>
+<li>Check your conf/application.conf file, make sure there are line <code>rythm.gae=true</code></li>
+<li><code>$play clean</code></li>
+<li><code>$play run</code></li>
+<li>Open your browser, navigate to http://localhost:9000, and you should be able to see the page</li>
+<li>check if there are <code>tmp/rythm</code> created. If no, then the <code>rythm.gae</code> mode works</li>
+<li>If <code>rythm.gae=false</code> or not configured, then there should have <code>tmp/rythm</code> created</li>
+</ol>
+
+<div>
+list the <code>tmp</code> dir:
+@{
+    String[] sa;
+    if (null == _play.tmpDir) {
+        // run in real GAE, thus no tmpDir created
+        sa = new String[]{};
+    } else {
+        sa = _play.tmpDir.list();
+    }
+}
+<ul id="tmpDirList">
+@for (String s: sa) {
+	<li data="@s">@s</li>
+}
+</ul>
+</div>
+
+@{
+	boolean gaeConf = _rythm.noFileWrite;
+}
+<p>
+	The current <code>rythm.gae</code> configuration is <code style="font-weight:bold">@gaeConf</code>, so <code>tmp/rythm</code> should @(gaeConf ? "not exists" : "exists").
+</p>
+<p style="text-weight: bold">Test result: <span id="result"></span></p>
+
+<script type="text/javascript">
+	$(function(){
+		var success = $('#tmpDirList li[data=rythm]').size() == @(gaeConf ? "0" : "1");
+		if (success) {
+			$('#result').css("color", "green").text("Success!");
+		} else {
+			$('#result').css("color", "red").text("Failed!");
+		}
+	})
+</script>
+
+<hr/>
+<h3>Template Source</h3>
+<pre>
+@(getTemplateClass(false).getTemplateSource())
+</pre>

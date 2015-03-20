@@ -1,0 +1,38 @@
+/** form content area **/
+#main_form_content {
+	min-height: 310px;
+}
+
+form .fields {
+	position: relative;
+    padding-top: 10px;
+    border-top: 1px solid #444;
+    border-bottom: 1px solid #444;
+	overflow: hidden;
+}
+
+/** form field layout **/
+form .fields>div {
+    padding: 6px;
+}
+form .fields .help {
+    font-size: 70%;
+    color: #888;
+    display: block;
+    margin-left: 115px;
+    margin-top: 5px;
+}
+
+/** label **/
+label {
+    display: block;
+    font-weight: bold;
+    width: 100px;
+    float: left;
+    color: #666;
+    text-align: right;
+    margin-right: 1em;
+}
+label:after {
+    content: ": ";
+}

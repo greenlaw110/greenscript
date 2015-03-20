@@ -1,0 +1,35 @@
+@__exitIfNoClass__(controllers.Secure)
+@extends("_layout")
+<div id="login">
+    <h1>@msg("secure.title")</h1>
+    <form action="@url(authenticate())" method="post">
+    @authenticityToken()
+
+    @if (flash.contains("error")) {
+    <p class="error">
+        @msg(flash.get("error"))
+    </p>
+    }
+    @if (flash.contains("success")) {
+    <p class="success">
+        @msg(flash.get("success"))
+    </p>
+    }
+
+    <p id="username-field">
+        <label for="username">@msg("secure.username")</label>
+        <input type="text" name="username" id="username" value="@flash.get("username")" />
+    </p>
+    <p id="password-field">
+        <label for="password">@msg("secure.password")</label>
+        <input type="password" name="password" id="password" value="" />
+    </p>
+    <p id="remember-field">
+        <input type="checkbox" name="remember" id="remember" value="true" @(flash.get("remember") != null ? "checked=\"true\"" : "") />
+        <label for="remember">@msg("secure.remember")</label>
+    </p>
+    <p id="signin-field">
+        <input type="submit" id="signin" value="@msg("secure.signin")" />
+    </p>
+    </form>
+</div>

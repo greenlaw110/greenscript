@@ -1,0 +1,181 @@
+# History
+# 1.0.0-20121110
+#        - Improve reverse url lookup performance
+#        - Add @_renderArgs@ implicit template variable
+#        - Add @_render(String, Object...)@ interface to @TemplateBase@ to allow recursive render template
+#        Bug fixes:
+#        - https://github.com/greenlaw110/Rythm/issues/92
+#        - https://github.com/greenlaw110/Rythm/pull/91
+#        - https://github.com/greenlaw110/Rythm/pull/90
+#        - https://github.com/greenlaw110/play-rythm/issues/55
+# 1.0.0-20121106a
+#        - Add _getSection() interface to TemplateBase
+#        - Support add custom imports via app/rythm/__add_on.import file in both project and module folder
+#        - support add custom source code via app/rythm/__add_on.src file in both project and module folder
+#        - Add String _url([boolean,] String, Object...) template method to do reverse url lookup
+#        - Add String _msg(String, Object...) template method to do message lookup in template
+#        Bug fixes:
+#        - https://github.com/greenlaw110/Rythm/issues/89
+#        - https://github.com/greenlaw110/Rythm/issues/87
+#        - https://github.com/greenlaw110/Rythm/issues/86
+#        - https://github.com/greenlaw110/Rythm/issues/80
+# 1.0.0-20120815a
+#        Bug fixes:
+#        - https://github.com/greenlaw110/Rythm/issues/78
+# 1.0.0-20120814a
+#        Add render() interface to ITag.Body -> fix https://github.com/greenlaw110/greenscript/issues/58
+#        Bug fixes:
+#        - https://github.com/greenlaw110/Rythm/issues/77
+#        - https://github.com/greenlaw110/Rythm/issues/76
+#        - https://github.com/greenlaw110/Rythm/issues/74
+#        - https://github.com/greenlaw110/Rythm/issues/73
+# 1.0.0-20120806b
+#        emergency fix to NPE on prod mode
+#        Bug fixes:
+#        - https://github.com/greenlaw110/play-rythm/issues/48
+# 1.0.0-20120806
+#        scan template root on start up if in prod mode
+#        new loop variables: separator and utils
+#        Better way to invoke an macro
+#        Bug fixes
+#        - https://github.com/greenlaw110/play-rythm/issues/45
+#        - https://github.com/greenlaw110/play-rythm/issues/46
+# 1.0.0-20120718
+#        - https://github.com/greenlaw110/play-rythm/issues/44
+#        - https://github.com/greenlaw110/play-rythm/issues/43
+# 1.0.0-20120717
+#        - https://github.com/greenlaw110/play-rythm/issues/42
+#        - https://github.com/greenlaw110/play-rythm/issues/41
+# 1.0.0-20120716
+#        - https://github.com/greenlaw110/play-rythm/issues/37
+#        - https://github.com/greenlaw110/rythm/issues/66
+# 1.0.0-20120704a
+#        - https://github.com/greenlaw110/Rythm/issues/63
+# 1.0.0-20120704
+#        - Support TSM (toString mode)
+#        - https://github.com/greenlaw110/Rythm/issues/62
+# 1.0.0-20120703
+#        - https://github.com/greenlaw110/Rythm/issues/61
+#        - add @nosim() keyword
+#        - support array in SIM
+# 1.0.0-20120630
+#        - Support (SIM) string interpolation mode
+#        - https://github.com/greenlaw110/Rythm/issues/59
+# 1.0.0-RC8
+#        - https://github.com/greenlaw110/Rythm/issues/58
+#        - https://github.com/greenlaw110/Rythm/issues/57
+# 1.0.0-RC7
+#        - https://github.com/greenlaw110/Rythm/issues/56
+#        - https://github.com/greenlaw110/Rythm/issues/55
+#        - https://github.com/greenlaw110/Rythm/issues/54
+#        - https://github.com/greenlaw110/Rythm/issues/53
+#        - https://github.com/greenlaw110/Rythm/issues/52
+#        - https://github.com/greenlaw110/Rythm/issues/50
+#        - https://github.com/greenlaw110/Rythm/issues/49
+#        - https://github.com/greenlaw110/Rythm/issues/48
+#        - https://github.com/greenlaw110/Rythm/issues/47
+#        - https://github.com/greenlaw110/Rythm/issues/46
+#        - https://github.com/greenlaw110/play-rythm/issues/32
+#        - https://github.com/greenlaw110/play-rythm/issues/31
+# 1.0.0-RC6:
+#        - https://github.com/greenlaw110/play-rythm/issues/30
+#        - https://github.com/greenlaw110/play-rythm/issues/29
+#        - https://github.com/greenlaw110/play-rythm/issues/28
+#        - https://github.com/greenlaw110/play-rythm/issues/25
+#        - https://github.com/greenlaw110/play-rythm/issues/24
+#        - https://github.com/greenlaw110/play-rythm/issues/16
+#        - https://github.com/greenlaw110/Rythm/issues/44
+#        - https://github.com/greenlaw110/Rythm/issues/43
+#        - https://github.com/greenlaw110/Rythm/issues/42
+#        - https://github.com/greenlaw110/Rythm/issues/41
+#        - https://github.com/greenlaw110/Rythm/issues/40
+#        - https://github.com/greenlaw110/Rythm/issues/38
+#        - Fix bug: bad render result of loop inside callback body
+# 1.0.0-RC5
+#        - Add @compact, @nocompact, @macro, @exec
+#        - Support customized java extensions
+#        - Fix bug: #35 The content inside @for loop doesn't update on dev mode
+#        - Fix bug: #21 enhance embedded template class fail
+# 1.0.0-RC4
+#        - support @foo?.bar()?.zee() style expression
+#        - support precompile
+#        - support template class properties enhancement
+#        - bug fix: #34, #32
+# 1.0.0-RC3
+#        - Bug fixes. See history
+# 1.0.0-RC2
+#        - Support GAE mode (no disk write)
+#        - https://github.com/greenlaw110/play-rythm/issues/13
+#        - https://github.com/greenlaw110/play-rythm/issues/14
+# 1.0.0-RC1
+#        - A lot of changes and enhancements including auto-escape, native cache support, call tag body with parameter, relative/import path to call tag, assign part to variable etc.
+# 0.9.7a - Add @_rythmPlugin and @_rythm@ implicit variable
+#        - Add isActionCall() interface to RythmPlugin to see whether we are inside a action invocation context
+# 0.9.7  - Support invoke controller action method directly
+#        - Bug fix: Template clone logic is not clean, there are state retained after clone
+#        - Pass argument value from caller to tag if not set explicitly (another usability improvement)
+#        - Rythm engine version: 0.9.2c
+# 0.9.6d - Support @__logTime__ directive, enable log rendering time spent for the template
+#        - Log rythm message with RythmPlugin-[version]> prefix
+# 0.9.6c - Fix bug: Secure layout not found when loading the module directly in project folder instead of installing to play/modules
+# 0.9.6b - Fix bug: Java FastTags stop working since 0.9.6
+# 0.9.6a - emergency fix to ArgsParser issue: line breaks stay at the end
+# 0.9.6  - Bug fix: https://github.com/greenlaw110/play-rythm/issues/4
+#        - Error debug UI update to play-2.0 style
+#        - Solve several issues in built-in tag/templates
+#        - Precompile now build all rythm templates (So move templates to app/rythm folder)
+#        - @UseRythmTemplateEngine and @UseSystemTemplateEngine are deprecated now
+#        - add @__exitIfNoClass__ directive to allow exit parsing process if no certain class exists
+#        - bug fix: https://github.com/greenlaw110/Rythm/issues/15
+#        - print out java source if compilation error on prod mode
+#        - bug fix: NPE while scan tags in rare cases
+#        - simplifed class reloading logic in TemplateClassLoader.detectChange(...)
+#        - more acturate template line information for debugging
+#        - https://github.com/greenlaw110/Rythm/issues/1
+#        - support {} to enclose tag body
+#        - support @{} to enclose script content.
+#        - improved compact mode handling, now "//" line will not get merged with the following line
+#        - improved debugging when error happened in the embedded class
+# 0.9.5b - Bug fixes:
+#          > https://github.com/greenlaw110/Rythm/issues/15
+#          > https://github.com/greenlaw110/Rythm/issues/13
+#          > https://github.com/greenlaw110/play-rythm/issues/4
+# 0.9.5a - fix bug: NPE on startup in rare case
+# 0.9.5 - fix bug: NPE in multi-thread environment
+#       - support app/rythm as template root
+#       - template class cache hash calcualtion consider play-rythm plugin version
+# 0.9.4g - fix bug: error compile tag when there are tag call to self
+# 0.9.4f - Further improvements on handling ClassCastException when working with Play!Framework
+# 0.9.4e - Use resource loader to resolve template name when templateClassManager cannot find it
+#          this helps to solve the problem that user load resource start from tag root instead of
+#          template root
+# 0.9.4d - Bug fix in prod/dev mode set when rythm's default mode changed to prod
+# 0.9.4c - fix NPE when loading embedded class during template class loading in rare cases
+# 0.9.4b - Add views for docviewer plugins
+# 0.9.4a - Add line information to Tag invocation statement, default to enable Java Extension
+# 0.9.4 - Java Extension mechanism and all Play's built-in java extension now supported
+# 0.9.3 - Permanent cache for generated source code and bytecode
+# 0.9.2 - Improved ClassCastException handling
+#       - Compact mode
+#       - Passing parameter to extended template
+#       - Elvis expression
+#       - improved Error reporting on tag folder scanning
+# 0.9.1 - suppress ClassCastException in dev mode
+# 0.9 - Increase version to mark it as pre-release.
+#     - Bug fix: error report not correct when compile/parse error found in parent template
+# 0.4a - Template executing exception reporting integrated with Play!Framework
+# 0.4 - Parsing and compilation error reporting integrated with Play!Framework
+# 0.3a - fix bug: class not compiled when resource name contains '-'
+# 0.3 - port groovy error tags, limited support for JavaExtensions
+# 0.2h - improved render speed by preallocate stringbuilder buffer size
+# 0.2g - allow application to register implicit render args
+# 0.2f - fix bug: @ArgParser fail if there is no character left behind ";" of the @args line
+# 0.2e - lots of bug fix, greenscript running correctly! setRender by object array no longer touch defaultRenderArgs
+# 0.2d - refactor template base and tag base class
+# 0.2c - fix bug: runtime exception when path point to a layout template
+# 0.2b - strip off ';' from @args declaration line
+# 0.2a - working with Play!
+self: play -> rythm 1.0.0-20121110
+
+require:
+    - play 1.2

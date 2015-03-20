@@ -1,0 +1,326 @@
+h1. PlayRythm version history
+
+h2. <a name="roadmap">What's left for R1.0</a>
+
+* "Support java extension in tag invocation":https://github.com/greenlaw110/Rythm/issues/37
+* html helpers
+* While loop
+* Switch case
+
+h2. <a name="v1.0.0-20121109">v1.0.0-20121110</a>
+
+* New Feature
+** <a href="user_guide#implicit_object">Add @_renderArgs@ implicit template variable</a>
+** Add @_render(String, Object...)@ interface to @TemplateBase@ to allow recursive render template
+** <a href="https://github.com/greenlaw110/Rythm/pull/90">Do not detect template changes when <code>rythm.loadPreCompiled</code> is true</a>
+*** Thanks "Jérôme BENOIS":https://github.com/jeromebenois for his "contribution":https://github.com/greenlaw110/Rythm/pull/90
+* Improvement
+** Improve reverse URL lookup performance
+* Bug fixes:
+** "NPE loading non-exists tag":https://github.com/greenlaw110/Rythm/issues/92
+** "Logic error in TemplateBase.clone":https://github.com/greenlaw110/Rythm/issues/91
+** "Concurrency problem in TemplateBase class":https://github.com/greenlaw110/play-rythm/issues/55
+
+h2. <a name="v1.0.0-20121106a">v1.0.0-20121106a</a>
+
+* Emergency bug fix to inline tag in include file cause compilation error
+
+h2. <a name="v1.0.0-20121106">v1.0.0-20121106</a>
+
+p(note). There is a "break change":user_guide#break-change-in-inline-tag-definition in inline tag definition
+
+* New feature
+** "Support customize template class by adding imports and methods to all template classes in one place":integration#customize-template-class
+** "Common method in template class to do reverse url lookup":integration#_url
+* Bug fix
+** "the render result of calling inline tag inside the body of another tag call is disordered":https://github.com/greenlaw110/Rythm/issues/89
+** "Invoking Inline tag defined in base template cause error":https://github.com/greenlaw110/Rythm/issues/87
+** "relative path tag and extended template resolution doesn't work at some time":https://github.com/greenlaw110/Rythm/issues/86
+** "Embedded class byte code not enhanced":https://github.com/greenlaw110/Rythm/issues/80
+
+h2. <a name="v1.0.0-20120815a">v1.0.0-20120815a</a>
+
+* Buf fixes:
+** "The render result of calling tag inside a body of another tag call is disordered":https://github.com/greenlaw110/Rythm/issues/78
+
+h2. <a name="v1.0.0-20120814a">v1.0.0-20120814a</a>
+
+p(note). Break change: any "\" in template will be automatically doubled in Java code to prevent "Invalid escape sequence" compilation error
+
+* Enhancement:
+** Add @String render()@ interface to @ITag.Body@, support fix of https://github.com/greenlaw110/greenscript/issues/58
+** "Support line breaks into tags":https://github.com/greenlaw110/Rythm/issues/73
+* Buf fixes:
+** "'\/' in template cause 'Invalid escape sequence' compilation error":https://github.com/greenlaw110/Rythm/issues/77
+** "Use @chain() in a `@include` template cause compilation exception":https://github.com/greenlaw110/Rythm/issues/76
+** "Call @chain().raw().assign('foo'){...} not work as expected":https://github.com/greenlaw110/Rythm/issues/74
+** "Unexpected behaviour on error reporting":https://github.com/greenlaw110/play-rythm/issues/35
+
+h2. <a name="v1.0.0-20120806b">v1.0.0-20120806b</a>
+
+* Bug fix:
+** An emergency fix to NPE on prod mode of v1.0.0-20120806
+** "'@url' is separating the parameters using '&amp;' instead '&'":https://github.com/greenlaw110/play-rythm/issues/48
+
+h2. <a name="v1.0.0-20120806">v1.0.0-20120806</a>
+
+* Enhancement
+** Scan template root to pre-load template classes on start up if running in product mode
+** "Executing macro like invoking a tag":user_guide#other-methods-execute-macro
+** "New loop variables (separator and utils) inside @for loop":reference#loop_variables
+* Bug fix
+** "Unclear error report when routes file configured bad static URL mapping":https://github.com/greenlaw110/play-rythm/issues/45
+** "StringIndexOutOfBoundsException when calling Rythm.toString() in PlayRythm":https://github.com/greenlaw110/play-rythm/issues/46
+** Resolve NPE issue on TagContext.enter() call in some rare cases
+
+h2. <a name="v1.0.0-20120718">v1.0.0-20120718</a>
+
+* Bug fix
+** "@msg() tag does not recognize parameter if there is quotation mark on it":https://github.com/greenlaw110/play-rythm/issues/44
+** "@msg() tag does not recognize variable as message":https://github.com/greenlaw110/play-rythm/issues/43
+
+h2. <a name="v1.0.0-20120717">v1.0.0-20120717</a>
+
+* Bug fix
+** "Pre load routes cause class not found error in some cases":https://github.com/greenlaw110/play-rythm/issues/42
+** "Wrong Template Compilation Error Position with @msg() tag":https://github.com/greenlaw110/play-rythm/issues/41
+
+h2. <a name="v1.0.0-20120716">v1.0.0-20120716</a>
+
+* Feature
+** "Auto To String Mode":auto_to_string
+** "support overload for inline tag definition":https://github.com/greenlaw110/Rythm/issues/67
+* Bug fix
+** "FastTag body parameter should be null when no body is supported":https://github.com/greenlaw110/play-rythm/issues/37
+** "@assign does not work inside tags":https://github.com/greenlaw110/Rythm/issues/66
+** "cannot use @for loop inside include template":https://github.com/greenlaw110/Rythm/issues/68
+
+h2. <a name="v1.0.0-20120704a">v1.0.0-20120704a</a>
+
+* Bug fix
+** "external parser like @url() not recognized once NotSIMTemplate captured":https://github.com/greenlaw110/Rythm/issues/63
+
+h2. <a name="v1.0.0-20120704">v1.0.0-20120704</a>
+
+* Feature
+** <a href="to_string">Support <b>TSM (toString mode)</b></a>
+* Enhancement
+** "ClasspathResource should check resource change on dev mode":https://github.com/greenlaw110/Rythm/issues/62
+
+h2. <a name="v1.0.0-20120703">v1.0.0-20120703</a>
+
+* Feature
+** "Support array in String interpolation mode":string_interpolation#array
+** "Add @nosim() keyword":string_interpolation#nosim
+* Bug fix
+** "SIM not work with @(foo) style expression":https://github.com/greenlaw110/Rythm/issues/61
+** "@url, @fullUrl and @msg not work in SIM":https://github.com/greenlaw110/play-rythm/issues/34
+
+h2. <a name="v1.0.0-20120630">v1.0.0-20120630</a>
+
+* Feature
+** "String interpolation mode":string_interpolation
+* Enhancement
+** "support defining return type of the inline tag":user_guide#inline_tag_return_type
+
+h2. <a name="v1.0.0-RC8">v1.0.0-RC8</a>
+
+* Bug fixes:
+** "Space get removed when run in compact output mode":https://github.com/greenlaw110/Rythm/issues/58
+** "StringIndexOutOfBoundsException occured on reloading":https://github.com/greenlaw110/Rythm/issues/57
+
+h2. <a name="v1.0.0-RC7">v1.0.0-RC7</a>
+
+* New built-in tags:
+** "errors":reference#errors
+* Enhancements:
+** Improved boot up performance when running in product mode
+** "Support multi lines import declaration":https://github.com/greenlaw110/Rythm/issues/56
+** "Support multi line render args declaration":https://github.com/greenlaw110/Rythm/issues/55
+* Bug Fixes:
+** "unexpected line breaks":https://github.com/greenlaw110/Rythm/issues/54
+** "line separator not kept for certain case":https://github.com/greenlaw110/Rythm/issues/53
+** "embedded tag call with @doBody() output not synchronized":https://github.com/greenlaw110/Rythm/issues/52
+** "Empty lines in template are removed":https://github.com/greenlaw110/Rythm/issues/50
+** "getRenderArg can't get anything in layout template":https://github.com/greenlaw110/Rythm/issues/49
+** "Make getRenderArg method generic?":https://github.com/greenlaw110/Rythm/issues/48
+** "update layout templates only effects on one content template":https://github.com/greenlaw110/Rythm/issues/47
+** "NPE when call Java based tag with empty parameter":https://github.com/greenlaw110/Rythm/issues/46
+** "@errorList() does not output content":https://github.com/greenlaw110/play-rythm/issues/32
+** "NPE when calling @errorList()":https://github.com/greenlaw110/play-rythm/issues/31
+
+h2. <a name="v1.0.0-RC6">v1.0.0-RC6</a>
+
+* New built-in keywords:
+** <a href="reference#expand"><code>@expand</code></a>: alias of <a href="reference#exec"><code>@exec</code></a>, used to expand a predefined <a href="reference#macro"><code>@macro</code></a>
+* Enhancements:
+** Support assign to final variable: <code>@assign("foo", true) {...}</code> and <code>@myTag(...).assign("myTagResult", true)</code>
+* Bug fixes:
+** "Cannot pass expression in parameters to @extends":https://github.com/greenlaw110/Rythm/issues/38
+** "Cannot use complex expression in @set":https://github.com/greenlaw110/Rythm/issues/40
+** "Need refresh twice when layout template changed":https://github.com/greenlaw110/Rythm/issues/42
+** "expression with the same name as a keyword will not be evaluated":https://github.com/greenlaw110/Rythm/issues/43
+** "In prod mode, javascript in templates can get corrupt over dropped newlines":https://github.com/greenlaw110/Rythm/issues/44
+** "Support java syntax in tag parameters":https://github.com/greenlaw110/play-rythm/issues/16
+** "@url expression cause trouble":https://github.com/greenlaw110/play-rythm/issues/24
+** "String index out of range: -1":https://github.com/greenlaw110/play-rythm/issues/25
+** "'Action Application.public not found' error when deploying to Heroku":https://github.com/greenlaw110/play-rythm/issues/28
+** "In prod mode, javascript in templates can get corrupt over dropped newlines":https://github.com/greenlaw110/play-rythm/issues/29
+** "i18n is always escaped":https://github.com/greenlaw110/play-rythm/issues/30
+
+h2. <a name="v1.0.0-RC5">v1.0.0-RC5</a>
+
+* New built-in keywords:
+** <a href="reference#compact"><code>@compact</code></a>: mark a block of template to be output in compact mode without regarding to global engine setting
+** <a href="reference#nocompact"><code>@nocompact</code></a>: mark a block of template to be output in NON-compact mode without regarding to global engine setting
+** <a href="reference#macro"><code>@macro</code></a>: define an macro
+** <a href="reference#exec"><code>@exec</code></a>: execute an macro
+* Support "custom defined Java Extensions":user_guide#custom-java-extension
+* Bug fixes:
+** "enhance embedded template class fail":https://github.com/greenlaw110/play-rythm/issues/21
+** "The content inside @for loop doesn't update on dev mode":https://github.com/greenlaw110/rythm/issues/35
+
+h2. <a name="v1.0.0-RC4">v1.0.0-RC4</a>
+
+* "Support groovy style null safe expression":user_guide#nullable_expression
+* Support pre-compile - fast load on GAE or other cloud stack
+* "Support template source properties enhancement":user_guide#properties_enhancement
+* Bug fixes:
+** "Template cache cannot handle nested class with levels 2 or more":https://github.com/greenlaw110/Rythm/issues/34
+** "@invoke tag parse issue":https://github.com/greenlaw110/Rythm/issues/32
+** "Cannot compile template when reference to application class in WAR deployment":https://github.com/greenlaw110/play-rythm/issues/20
+
+h2. <a name="v1.0-RC3">v1.0.0-RC3</a>
+
+* Bug fixes:
+** "cannot do type cast in @for loop":https://github.com/greenlaw110/Rythm/issues/29
+** "escape with JSON format cause syntax error in javascript":https://github.com/greenlaw110/Rythm/issues/27
+** "@__simple__ template java source does not have setRenderArgs(Object...) method":https://github.com/greenlaw110/Rythm/issues/24
+** "Cannot use primitive type in @for loop":https://github.com/greenlaw110/Rythm/issues/30
+** "@args: Cannot declare array type":https://github.com/greenlaw110/Rythm/issues/33
+** "Logic error is RythmPlugin.isActionCall":https://github.com/greenlaw110/play-rythm/issues/19
+** "Fix login form for Secure":https://github.com/greenlaw110/play-rythm/pull/18 - thanks to "Roman Dolgushin":https://github.com/rdolgushin for the contribution
+** "NPE when doing reverse url lookup in mail template":https://github.com/greenlaw110/play-rythm/pull/11 - thanks to "Sojin":https://github.com/sojin for the contribution
+
+h2. <a name="v1.0-RC2">v1.0.0-RC2</a>
+
+* Support "GAE mode":integration#configuration
+* A live "demo application":http://play-rythm-demo.appspot.com/ running on GAE for study
+* Issues resolved:
+** "Support TagContext in FastTags":https://github.com/greenlaw110/play-rythm/issues/13
+** "Support FastTags default arg":https://github.com/greenlaw110/play-rythm/issues/14
+
+h2. <a name="v1.0-RC1">v1.0.0-RC1</a>
+
+h3. break changes
+
+* <a href="reference#renderBody"><code>@renderBody()</code></a> does not render layout content now. It's used to "render tag body":user_guide#callback_tag_body specifically. To render the layout content, use <a href="reference#render"><code>@doLayout()</code></a> or <a href="reference#render"><code>@render()</code></a> without section name parameter
+* Automatic escape expression with html format if the template file name suffix is .html. If your code breaks, try to use <a href="reference#raw"><code>@raw()</code></a> tag to surround relevant template part or export your variable with <code>.raw()</code> extension.
+** Note **auto-escape can cause template execution performance up to 3 times slower** (still much faster than groovy) depending on how many expressions there are in your template, but we consider it a good trade-off to offer a secure default behavior. For those people who "need for speed", simply wrap your entire template content in @raw@ block: <code>@raw(){your content comes here}</code>.
+* @app/view@ as template root are no longer supported. All rythm template files must be put into @app/rythm@ folder
+* @app/view/tags/rythm@ as tag root are no longer supported. Just put tag files as normal template file into @app/rythm@ folder
+* <a href="reference#section"><code>@section</code></a> tag usage:
+** previously <code>@section sectionName {...}</code>
+** now <code>@section("sectionName") {...}</code>
+
+h3. New features
+
+* "Tag invocation decorations":user_guide#tag_invoke_decoration and "chain":user_guide#chain_tag_invocation_decoration them together
+** "Cache tag invocation result":user_guide#tag_invocation_cache
+** "Cache controller action invocation result":user_guide#invoke_action_cache
+** "Invoke tag/action call using relative path and import path":user_guide#call_tag_relative_path
+** "Specify body callback parameter spec":user_guide#tag_invocation_callback
+* "Template content decorations":user_guide#template_content_decoration and "chain":reference#chain them together
+** "Mark a template block to output raw expression":reference#raw
+** "Mark a template block to escape expression using specific type":reference#escape
+** "assign a block of template content into a variable":reference#assign
+** "cache a template block":reference#cache
+* "Dynamic tag invocation with @invoke keyword":user_guide#dynamic_tag_invocation
+* "Call tag body with parameter":reference#renderBody_with_params
+* "Include other template inline":user_guide#include. And now you can "reuse inline tag definitions across multiple views":user_guide#reuse_inline_tag
+* Call the current template (self) as a tag using <a href="reference#this"><code>@this</code></a> directive
+* <a href="reference#extends"><code>@extends()</code></a> directive now has "new syntax":user_guide#extended_template_path to specify layout(parent) template
+* <a href="reference#return">Abort current template executing process and return to caller using <code>@return</code></a>
+* <a href="reference#break">Break the current loop using <code>@break</code></a>
+* <a href="reference#continue">Continue the current loop using <code>@continue</code></a>
+* New <a href="integration#cache4">@Cache4@</a> annotation to mark on controller action method
+* <code>@ts()</code> output timestamp in place
+* <code>@__simple__</code> mark the current template as simple template with no implicit variables/imports and does not extend other template
+* An new demo application with 25 sample cases, with each one has template source and generated java source presented for quick study the Rythm engine
+
+h3. Small enhancements
+
+* <code>@verbatim(){}</code> now escape html code
+* <code>@render[Section]()</code> now accept <a href="reference#default_section_content">default content/section block</a>
+* <a href="reference#for_second_form">Support <code>@for(int i = 0; i < 100; ++i)</code> loop style</a>
+* New alias for Play specific keywords:
+** <code>@url</code>: previously <code>@_u</code>, url reverse lookup
+** <code>@fullUrl</code>: previously <code>@_au</code>, url reverse lookup with absolute path
+** <code>@msg</code>: previously <code>@_m</code>, i18n message lookup
+
+h3. Issues closed
+
+* "https://github.com/greenlaw110/Rythm/issues/6":https://github.com/greenlaw110/Rythm/issues/6
+* "https://github.com/greenlaw110/Rythm/issues/21":https://github.com/greenlaw110/Rythm/issues/21
+* "https://github.com/greenlaw110/Rythm/issues/14":https://github.com/greenlaw110/Rythm/issues/14
+* "https://github.com/greenlaw110/play-rythm/issues/5":https://github.com/greenlaw110/play-rythm/issues/5
+* "https://github.com/greenlaw110/play-rythm/issues/1":https://github.com/greenlaw110/play-rythm/issues/1
+* "https://github.com/greenlaw110/play-rythm/pull/11":https://github.com/greenlaw110/play-rythm/pull/11
+
+h2. <a name="v0.9.7a">v0.9.7a</a>
+
+* Add two implicit variables: @_rythmPlugin@: the RythmPlugin instance; @_rythm@ the RythmEngine instance
+* Add @RythmPlugin.isActionCall()@ api to allow template author to know whether it is inside a action invocation context
+
+h2. <a name="v0.9.7">v0.9.7</a>
+
+* Support invoke controller action method in template
+
+h2. <a name="v0.9.6c">v0.9.6c</a>
+
+* Fix bug: Secure layout not found when loading the module directly in project folder instead of installing to play/modules
+
+h2. <a name="v0.9.6b">v0.9.6b</a>
+
+* Fix bug: Java FastTags stop working on v0.96.
+
+h2. <a name="v0.9.6a">v0.9.6a</a>
+
+* Emergency fix to ArgsParser: line breaks stay there which makes the generated html not valid as you have line breaks before <!DOCTYPE html>
+
+h2. <a name="v0.9.6">v0.9.6</a>
+
+* Error report update to play-2.0 style
+* Solve several issues in built-in tag/templates
+* Precompile now build all rythm templates (So move templates to app/rythm folder)
+* <code>@UseRythmTemplateEngine</code> and <code>@UseSystemTemplateEngine</code> annotation are deprecated now
+* add <code>@__exitIfNoClass__</code> directive to allow exit parsing process if no certain class exists
+* bug fix: "https://github.com/greenlaw110/Rythm/issues/15":https://github.com/greenlaw110/Rythm/issues/15
+* print out java source if compilation error on prod mode
+* bug fix: NPE while scan tags in rare cases
+* simplified class reloading logic in <code>TemplateClassLoader.detectChange(...)</code>
+* improved template line number report in error reporting
+* buf fix: "https://github.com/greenlaw110/Rythm/issues/1":https://github.com/greenlaw110/Rythm/issues/1
+* support <code>{}</code> to enclose tag body
+* support <code>@{}</code> to enclose script content.
+* improved space/line break compact handling, now "//" line will not get merged with the following line
+* improved debugging when error happened in the embedded class
+
+h2. <a name="v0.9.5b">v0.9.5b</a>
+
+* Bug fixes
+** "https://github.com/greenlaw110/Rythm/issues/15":https://github.com/greenlaw110/Rythm/issues/15
+** "https://github.com/greenlaw110/Rythm/issues/13":https://github.com/greenlaw110/Rythm/issues/13
+** "https://github.com/greenlaw110/play-rythm/issues/4":https://github.com/greenlaw110/play-rythm/issues/4
+* Add @__exitIfNoClass__ instruction to enable exit from parsing process if no class found
+
+h2. <a name="v0.9.5a">v0.9.5a</a>
+
+* Support app/rythm as view root
+* Fix NPE when running in prod mode in rare cases
+* template class cache hash calculation take plugin version into consideration
+* Now you can call self tag inside that tag
+
+h2. <a name="v0.9">v0.9</a>
+
+* The first public beta release

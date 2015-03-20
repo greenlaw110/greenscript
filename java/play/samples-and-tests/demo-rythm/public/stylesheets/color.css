@@ -1,0 +1,52 @@
+/** Default HTML Element Color **/
+body, html {background: #444444;}
+
+a {color: #2244BB;}
+a:link, a:visited {text-decoration: none; color:#2244BB;}
+a:hover, a:active {
+    text-decoration: underline; 
+}
+
+thead {
+    background: #111;
+    color: #fff;
+}
+
+thead a {
+    color: #fff;
+    font-weight: bold;
+}
+
+thead a:link, thead a:visited {color:#fff;}
+thead a:hover, thead a:active  {
+    color:#fff;
+}
+
+tr.even {
+    background-color: whitesmoke;    
+}
+
+#header {color: #ddd;}
+
+#content {background: #fff;}
+
+#footer {color: #999;}
+
+#footer a {color: gold;}
+
+
+div.error {
+    background: #CC0000;
+    color: #fff;
+}
+
+div.success {
+    background: #2E9F27;
+    color: #fff;
+}
+
+td.infos {
+    background: #EEEEEE;
+    width: 30%;
+    font-size: 11px;
+}

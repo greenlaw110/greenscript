@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>@get("title")</title>
+        <meta charset="@_response_encoding">
+        <link rel="stylesheet" media="screen" href="@url("/public/stylesheets/main.css")">
+        @render("moreStyles")
+        <link rel="shortcut icon" type="image/png" href="@url("/public/images/favicon.png")">
+        <script src="@url("/public/javascripts/jquery-1.5.2.min.js")" type="text/javascript" charset="@_response_encoding"></script>
+        @render("moreScripts")
+    </head>
+    <body>
+		<h1>@get("title")</h1>
+        @doLayout()
+    </body>
+</html>

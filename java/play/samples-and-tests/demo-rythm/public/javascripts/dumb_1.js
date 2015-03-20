@@ -1,0 +1,1 @@
+var dumb_1 = Class.create({});

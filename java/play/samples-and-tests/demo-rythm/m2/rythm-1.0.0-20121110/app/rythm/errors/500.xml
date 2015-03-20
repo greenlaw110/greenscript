@@ -1,0 +1,5 @@
+@args Exception exception
+<error>
+    <type>@(null == exception ? "" : exception.getClass().getName())</type>
+    <message>@(null == exception ? "" : exception.getMessage())</message>
+</error>

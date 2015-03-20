@@ -1,0 +1,25 @@
+@extends(main)
+@greenscript.css("form livevalidation")
+
+<h2>@get("formTitle")</h2>
+
+@greenscript.js("livevalidation")
+@greenscript.js() {
+var rules = new Hash();
+var ruleById = function (id) {
+    if (!$(id)) return;
+    var r = rules.get(id);
+    if (!r) {
+        r = new LiveValidation(id, {onlyOnBlur: true});
+        rules.set(id, r);
+    }
+    return r;
+}
+}
+
+@doLayout()
+
+@greenscript.js("/public/javascripts/pMask")
+@greenscript.js(output:true){
+    new pMask();
+}

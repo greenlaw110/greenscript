@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+%{
+docTitle = get('title') ?: 'GreenScript Demo Application - Single Page Template'
+}%
+<html>
+    <head>
+        <title>${docTitle}</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        #{greenscript.css 'layout color form livevalidation datepicker', output:'all'/}
+        <link rel="shortcut icon" type="image/png" href="/public/images/favicon.png">
+		*{text CDN }*
+		#{greenscript.js 'http://ajax.googleapis.com/ajax/libs/dojo/1.5/dojo/dojo.xd.js.uncompressed.js', output:'list'/}
+        #{greenscript.js 'livevalidation pMask datepicker', output: 'all' /}
+        <script type="text/javascript">
+		var rules = new Hash();
+		var ruleById = function (id) {
+		    if (!$(id)) return;
+		    var r = rules.get(id);
+		    if (!r) {
+		        r = new LiveValidation(id, {onlyOnBlur: true});
+		        rules.set(id, r);
+		    }
+		    return r;
+		}
+		</script>        
+    </head>
+    <body>
+        <div id="header">
+            <h1>${docTitle}</h1>
+        </div>
+        
+        #{if flash.success}
+            <div class="success">
+                ${flash.success}
+            </div>
+        #{/if}
+        #{if flash.error || error}
+            <div class="error">
+                ${error ?: flash.error}
+            </div>
+        #{/if}
+        
+        <div id="content">
+            <h2>Customer - Single Page Template</h2>
+            
+			<form action="/post" method="post">
+			    <div class="fields">
+			        <div>
+			            <label>First Name</label>
+			            <input type="text" id="first_name" name="firstName"/>
+			            <span class="help">required</span>
+			        </div>
+			        <div>
+			            <label>Last Name</label>
+			            <input type="text" id="last_name" name="lastName"/>
+			            <span class="help">required</span>
+			        </div>
+			        <div>
+			            <label>Birthday</label>
+			            <input class="date" type="text" name="birthday"/>
+			        </div>
+			        <div>
+			            <label>Street</label>
+			            <input type="text" name="street"/>
+			        </div>
+			        <div>
+			            <label>State</label>
+			            <input type="text" name="state"/>
+			        </div>
+			        <div>
+			            <label>Country</label>
+			            <input type="text" name="country"/>
+			        </div>
+			        <div>
+			            <label>Email</label>
+			            <input id="email" type="text" name="email"/>
+			        </div>
+			        <div>
+			            <label>Phone</label>
+			            <input type="text" name="phone" class="p-mask" data-pMask="{type:'fixed', mask:'[99.999.999-x]',stripMask:false, stripMaskOnSubmit:false}"/>
+			        </div>
+			    </div>
+			    <ul class="actions">    
+			        <li><input type="submit" value="Save"/></li>
+			        <li><input type="button" value="Reset"/></li>
+			    </ul>
+			</form>
+			<script type="text/javascript">
+			    var rule = ruleById('first_name');
+			    rule.add(Validate.Presence)
+			    rule = ruleById('last_name');
+			    rule.add(Validate.Presence)
+			    rule = ruleById('email');
+			    rule.add(Validate.Email)
+			    rule.add(Validate.Presence)
+			    $$('input.date').each(function(el){
+			        new Control.DatePicker(el, {icon: '/public/images/calendar.png', locale: 'en_iso8601'});
+			    });
+				new pMask();
+			</script>
+        </div>
+       
+        <div id="footer">
+            greenlaw110@gmail.com
+            <br/><a href="/gsconf" target='_blank'> >> Config GreenScript </a>
+            <br/><a href="/"> >> Go to inherited page template demo</a>
+        </div>
+    </body>
+</html>

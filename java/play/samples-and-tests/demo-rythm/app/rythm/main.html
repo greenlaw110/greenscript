@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>@get("docTitle")</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        @greenscript.css("ie", browser:"lt IE 8", media: "screen")
+        @greenscript.css("layout color", output:"all")
+        @greenscript.js(output:"all")
+    </head>
+    <body>
+        <div id="header">
+            <h1>@get("docTitle")</h1>
+        </div>
+        
+        <div id="content">
+            @doLayout()
+        </div>
+       
+        <div id="footer">
+            greenlaw110@@gmail.com
+            <br/><a href="/gsconf" target="_blank"> >> Config GreenScript</a>
+            <br/><a href="@url(singlePage())" target="_blank"> >> Go to Single Page Template Demo</a>
+        </div>
+        
+    </body>
+</html>

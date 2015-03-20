@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+@args Exception result
+
+<html>
+    <head>
+        <title>Not found</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=@_response_encoding"/>
+    </head>
+    <body>
+        @if ("DEV".equals(_play.mode.name())) {
+            @e404(result)
+        } else {
+            <h1>Not found</h1>
+            <p>
+                @result.getMessage()
+            </p>
+        }
+    </body>
+</html>

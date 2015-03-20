@@ -1,0 +1,79 @@
+h1. AutoToString Mode
+
+p(note). This is *NOT* a Play specific feature.
+
+Rythm (starts from v1.0.0-20120716) provides an new feature called ATSM, the "Auto To String Mode". This feature allows you to implement object's @toString()@ method without writing template.
+
+bc. public class Address {
+    public String unitNo;
+    public String streetNo;
+    public String street;
+    public String suburb;
+    public String state;
+    public String postCode;
+    @com.greenlaw110.rythm.toString.NoExpose
+    public String accessCode;
+    @Override public String toString() {
+        return Rythm.toString(this);
+    }
+}
+
+You can also pass option and style to fine tune to toString result:
+
+bc. @Override public String toString() {
+    return Rythm.toString(this,
+        com.greenlaw110.rythm.toString.ToStringOption.defaultOption.setAppendTransient(true),
+        com.greenlaw110.rythm.toString.ToStringStyle.MULTI_LINE_STYLE);
+}
+
+h2. @Rythm.toString()@ API
+
+@Rythm.toString()@ API accept 1 or 3 parameters:
+
+bc. public String toString(Object)
+
+This API export object using default option and default style
+
+bc. public String toString(Object,
+    com.greenlaw110.rythm.toString.ToStringOption,
+    com.greenlaw110.rythm.toString.ToStringStyle)
+
+This API export object using specified option and style.
+
+h2. @ToStringOption@ properties
+
+bc. Class<?> upToClass = null;
+
+@upToClass@ specify to up most level of parent class which properties will be exported. If it's not specified, then it will expose properties up to @java.lang.Object@ level
+
+bc. boolean appendTransient = false;
+
+if @appendTransient@ is set to true then transient properties or properties annotated with @javax.persistence.Transient@ or @com.google.code.morphia.annotations.Transient@ will be output. By default these fields will NOT be output
+
+bc. boolean appendStatic = false;
+
+if @appendStatic@ is set to true then static properties will be output. By default they will NOT be output
+
+h2. @ToStringStyle@
+
+@com.greenlaw110.rythm.toString.ToStringStyle@ cloned @org.apache.commons.lang3.builder.ToStringStyle@
+
+h2. Skip certain properties
+
+ATSM suppresses output properties annotated with @com.greenlaw110.rythm.toString.NoExpose@, or @org.codehaus.jackson.annotate.JsonIgnore@.
+
+h2. Performance
+
+ATSM performance is slightly better (about 20% faster) than @org.apache.commons.lang3.builder.ReflectionToStringBuilder.toString(Object)@. "TSM":to_string however is 2x faster than it.
+
+h2. Compare to @ReflectionToStringBuilder@
+
+Unlike @ReflectionToStringBuilder@ which export all fields even private one, ATSM expose only public fields or properties exposed following java beans spec, i.e. properties like @getXxx()@ or @isXxx()@
+
+h2. <a name="resource">See also</a>
+
+# %(next)"To string mode":to_string%
+# "Rythm Manual Home Page":home
+
+
+

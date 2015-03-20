@@ -1,0 +1,4 @@
+@args Exception result
+Not found
+
+@result.getMessage()

@@ -1,0 +1,31 @@
+@import play.templates.JavaExtensions, play.Play, play.utils.Utils, play.exceptions.SourceAttachment
+@args Exception exception
+@if (exception instanceof play.exceptions.PlayException) {
+@{
+    final play.exceptions.PlayException pe = (play.exceptions.PlayException)exception;
+}
+@pe.getErrorTitle()
+@pe.getErrorDescription().replace("<strong>", "").replace("</strong>", "")
+
+@if (pe.isSourceAvailable() && null != pe.getLineNumber() && "DEV".equals(play.Play.mode.name())) {
+----------
+In @pe.getSourceFile() (around line @pe.getLineNumber())
+
+@{
+    final int from = pe.getLineNumber() - 5 >= 0 && pe.getLineNumber() < ((SourceAttachment)pe).getSource().size() ? pe.getLineNumber() - 5 : 0;
+    int to = pe.getLineNumber() + 5  < ((SourceAttachment)pe).getSource().size() ? pe.getLineNumber() + 5 : ((SourceAttachment)pe).getSource().size()-1;
+    List<String> source = ((SourceAttachment)pe).getSource();
+    List<String> lines = new ArrayList();
+    for (int i = from; i < to; ++i) {
+        lines.add(source.get(i));
+    }
+}@
+@for (String line: lines) {
+@((pe.getLineNumber() == line_index+from ? ">":" ").escape()) @(line_index+from): @line
+}
+}
+
+This exception has been logged with id @pe.getId()
+} else {
+@exception.getMessage()
+}

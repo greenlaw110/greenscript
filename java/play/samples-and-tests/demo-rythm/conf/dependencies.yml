@@ -1,0 +1,6 @@
+# Application dependencies
+
+require:
+    #- com.gelinsoft -> rythm 1.0.0-20120629
+    - play -> rythm 1.0.0-20121110
+

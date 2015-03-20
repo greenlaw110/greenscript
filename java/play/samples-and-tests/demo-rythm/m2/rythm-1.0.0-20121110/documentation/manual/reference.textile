@@ -1,0 +1,764 @@
+h1. PlayRythm Reference
+
+h2. <a name="tags">Built-in Tags</a>
+
+h3. <a name="msg">msg</a>
+
+Play specific tag. Lookup message string.
+
+bc. @msg("validation.required")
+
+The above has the same effect of the following groovy template code:
+
+bc. &('validation.required')
+
+You can also pass parameters:
+
+bc. @msg("some.message", "param1")
+
+You can pass variable as message (Start from v1.0.0-20120718):
+
+bc. @{String message = "validation.required"}
+@msg(message)
+
+h3. <a name="url">url</a>
+
+Play specific tag. Reverse lookup URL.
+
+bc. @url(Application.index)
+
+The above code is equal to the following groovy template code:
+
+bc. @{Applicaiton.index}
+
+You can also reverse lookup static url
+
+bc. @url(/public/javascripts/myscript.js)
+
+h3. <a name="fullUrl">fullUrl</a>
+
+Play specific tag. Absolute reverse lookup URL.
+
+bc. @fullUrl(Applicaiton.index)
+
+The above code is equal to the following groovy template code:
+
+bc. @@{Application.index}
+
+h3. <a name="assign">assign</a>
+
+Assign the enclosed block into a variable.
+
+bc. @assign("roleSelector") {
+<select>
+@for(Role role: Role.findAll()){
+<option value="@role.getId()">role.toString()</option>
+}
+</select>
+}
+...
+<label>select role</label>
+@roleSelector.raw()
+
+p(note). The variable name specified in <code>@assign</code> must be unique across the context where <code>@assign</code> is put in. Otherwise you will expect a compilation exception
+
+h4. assign to a final variable
+
+To assign to a final variable pass the second parameter @true@:
+
+bc. @assign("roleSelector", true) {
+<select>
+@for(Role role: Role.findAll()){
+<option value="@role.getId()">role.toString()</option>
+}
+</select>
+}
+
+The benefit of final variable is that you can use it directly inside <a href="#for"><code>@for</code></a> loop.
+
+h3. <a name="args">args</a>
+
+The @args@ tag declare variables used in the template.
+
+bc. @args String var1, int var2, ...
+
+or declare render arguments in multiple lines (start from 1.0.0-RC7):
+
+bc. @args {
+    String var1, int var2
+    boolean var3
+    ...
+}
+
+p(note). @args@ is one of few tags that are not invoked in @tag(...) style. At the moment please use ";" to terminate @args@ statement. This limitation will be removed in the future, and line-break could be an natural way to terminate the statement
+
+You can have any arbitrary number of @args@ statement in any where of your template, all variables declared will be effective in your template.
+
+h3. <a name="authenticityToken">authenticityToken</a>
+
+PlayRythm specific tag. This is a clone of the "authenticityToken":http://www.playframework.org/documentation/1.2.4/tags#authenticityToken tag in Play's groovy template.
+
+bc. @authenticityToken()
+
+Rendered as:
+
+bc. <input type="hidden" name="authenticityToken"
+    value="1c6d92fed96200347f06b7c5e1a3a28fa258ef7c">
+
+h3. <a name="authenticityTokenValue">authenticityTokenValue</a>
+
+PlayRythm specific tag. Use @authenticityTokenValue@ when you want to put the authenticity token value inside a javascript code in your view:
+
+bc. $.post("@url(User.save())",
+    {authenticityToken: '@authenticityTokenValue()', ...},
+    function(data){...});
+
+Rendered as:
+
+bc. $.post("/user/save",
+    {authenticityToken: "1c6d92fed96200347f06b7c5e1a3a28fa258ef7c", ...},
+    function(data){...});
+
+h3. <a name="break">break</a>
+
+Break <code>@for</code> loop
+
+bc. @for(User user: users) {
+	@if(theUserId.equals(user.getId())) {
+		@break
+	}
+}
+
+h3. <a name="cache">cache</a>
+
+Caches the tag body or use cached tag body
+
+bc. @cache("5min") {
+    <p>This content will be cached for 5 minutes</p>
+    including calling to any tags like:
+    @myTag()
+}
+
+Parameters:
+
+* empty parameter: the enclosed content get cached for duration defined in "rythm.cache.defaultTTL" seconds.By default it's one hour
+* first parameter: optional. specify the cache duration. Examples:
+** "5min", five minutes
+** "1h": one hour
+** "10s": ten seconds
+** "360d": three hundred and sixty days
+** "forever": a fairly large time that could be considered forever in the current computing context
+** 60 * 60: one hour
+* rest parameters: optional. specify the variables used in the cache key generation. By default cache key is calculated literally using the enclosed content. However if rest parameters presented the cached key will be calculated using the parameters as well. For example
+
+bc. @cache(null, new Random().nextInt()) {
+    <p>[@(new Date().getTime())]this content will literally looks like not cached at all because the cache key changes every time</p>
+}
+
+p(note). Be cautious when you use <code>@cache()</code> with template blocks contains dynamic content or nested dynamic content via <code>@include()</code> or "tag invocation":user_guide#invoke_tag. Cache key is calculated literally based on the content at parsing time, while dynamic content might changes at runtime. The rule of thumb is: **if content or nested content via tag invocation or @include@ varies dynamically, do not cache it**, or you cache it and pass all variables used across the content and nested content via tag invocation and @include@ directive
+
+p(note). The "cache decoration":user_guide#tag_invocation_cache to "tag invocation":user_guide#invoke_tag is safer than the <code>@cache()</code> directive, because "cache decoration" will check parameter value at runtime when generating cache key:
+
+bc. @myTag(someVariable).cache("1h") // safer cache, cache key will vary if someVariable value changes
+@cache("1h"){ // even someVariable value changed, the cache key will be the same so the output will remain unchanged
+    @myTag(someVariable)
+}
+
+-h3. <a name="cacheOnProd">cacheOnProd<a>-
+
+-Same as "cache", but cache happens only when @play.Play.mode@ is "@prod@".-
+
+p(note). @cacheOnProd@ is no longer available in v1.0. Use @cache instead. However
+you can configure rythm not to cache in dev mode by using @rythm.cache.prodOnly@ setting.
+By default @rythm.cache.prodOnly@ is set to @true@ so cache is not enabled at dev mode
+
+h3. <a name="chain">chain</a>
+
+Chain the following decoration functions together:
+
+# "cache":#cache
+# "escape":#escape
+# "raw":#raw
+# "assign":#assign
+
+In the example of "assign":#assign, you found that it always needs to call <a href="#raw">@raw()@</a> when you want to use the variable get assigned, by using @chain@ you can do it at one time:
+
+bc. @chain.raw().assign("roleSelector") {
+<select>
+@for(Role role: Role.findAll()){
+<option value="@role.getId()">role.toString()</option>
+}
+</select>
+}
+...
+<label>select role</label>
+@roleSelector @// no longer need raw() extension any more
+
+And you even add @cache()@ into the chain:
+
+bc. @chain.raw().assign("roleSelector").cache() {
+...
+}
+
+The order of the chained function doesn't matter as they are orthogonal concerns.
+
+h3. <a name="compact">compact</a>
+
+Mark a block of template to be output in compact mode without regarding to the "global compact setting":integration#configuration.
+
+bc. @compact() {
+   All content here will be output
+   in compact mode.
+}
+
+The above code will output the following content:
+
+bc. All content here will be output in compact mode
+
+See also "nocompact":#nocompact.
+
+h3. <a name="continue">continue</a>
+
+Continue current loop:
+
+bc. @for (User user: users) {
+    @if (user.isAdmin()) {
+        @continue
+    }
+    ...
+}
+
+h3. <a name="def">def</a>
+
+AKA <a href="#tag"><code>@tag</code></a>, define an "inline tag":user_guide#inline_tag (helper in Razor, macro in velocity and freemarker) which can be invoked from within the same template, the parent template or children templates
+
+bc. @def sayHi(String who) {
+    Hi @who
+}
+
+To use the tag defined just follow the common way:
+
+bc. @sayHi("Play!framework")
+
+or pass argument by name:
+
+bc. @sayHi(who: "Play!framework")
+
+p(note). Inline tag must be defined before the invocation code. Otherwise you might get compilation error.
+
+Define return type of inline tag:
+
+bc. @def boolean isMobile() {
+    @{
+        UserAgent ua = getRenderArg("userAgent");
+        return ua.isMobile();
+    }
+}
+
+And later on it can be used as:
+
+bc. @if (isMobile()) {
+   @mobileTag()
+} else {
+   @pcTag()
+}
+
+p(note). See "defining inline tag" in the "user guide":user_guide#inline_tag
+
+h3. <a name="doLayout">doLayout</a>
+
+Used with template inheritance, this tag inserts the evaluated sub-template’s contents.
+
+bc. <!-- common header here -->
+<div id="content">
+    @doLayout()
+</div>
+<!-- common footer here -->
+
+@doLayout@ tag is an alias of "render":#renderSection tag
+
+p(note). An easier and clean way to <code>@doLayout()</code> is <code>@render()</code>
+
+See also "template inheritance":user_guide#inheritance
+
+h3. <a name="doBody">doBody</a>
+
+An alias of <a href="renderBody"><code>renderBody</code></a>
+
+h3. <a name="error">error</a>
+
+PlayRythm specific tag. Outputs the validation error message, if present, for the field specified by the tag parameter.
+
+bc. @error("user.name")
+
+You can use the optional parameter to use a different field’s error message. This is useful when you want several fields to share a common error message.
+
+bc. @error("contact.street", "contact.address")
+@error("contact.city", "contact.address")
+@error("contact.country", "contact.address")
+
+h3. <a name="errorClass">errorClass</a>
+
+PlayRythm specific tag. Outputs the text @hasError@ if there is a validation error for the field specified by the tag parameter. This is useful for setting a CSS class for input fields with errors:
+
+bc. <input name="name" class="@errorClass("name")">
+
+which is equivalent to:
+
+bc. <input name="name" class="@(play.data.validation.Validation.hasError("name") ? "hasError" : '')">
+
+h3. <a name="errorList">errorList</a>
+
+Alias of @errors@. See below.
+
+h3. <a name="errors">errors</a>
+
+Corresponding to Groovy template's "errors":http://www.playframework.org/documentation/1.2.4/tags#errors. Iterates over the current validation errors.
+
+bc. <ul>
+@errors() {
+    <li>@error</li>
+}
+
+The <code>@error</code> tag defines implicit variables in its body.
+
+* @error@, the error
+* @error_index@, the error’s index, starting at 1
+* @error_isLast@, true for the last element
+* @error_isFirst@, true for the first element
+* @error_parity@, alternates between @odd@ and @even@
+
+bc. <table>
+<tr><th>#</th><th>Error</th></tr>
+@errors() {
+    <tr class="@error_parity"><td>@error_index</td><td>@error</td></tr>
+}
+</table>
+
+You can also use the optional field parameter, or just the default parameter, to filter only the errors belonging to a certain field.
+
+bc. <ul>
+@errors("myField") {
+    There where errors with the field myField<br />
+    <li>@error</li>
+}
+</ul>
+
+h3. <a name="escape">escape</a>
+
+Mark a block of template code default escape scheme:
+
+bc. @escape("JS"){
+    alert("Hello Rythm");
+}
+
+The above code set the default escape to @JavaScript@. The parameter passed to @escape() could be one of the following:
+
+# RAW - do not escape. Same effect with <a href="#raw"><code>@raw()</code></a>
+# CSV - escape as csv format
+# HTML - escape as html format
+# JS | JavaScript - escape as JavaScript format
+# JAVA - escape as Java format
+# XML - escape as XML format
+
+Note
+
+* the parameter is case insensitive.
+* if no parameter is passed, then it default to HTML
+* you pass the parameter within quotation mark or not
+
+h3. <a name="exec">exec</a>
+
+Execute an "macro":#macro. AKA <a href="#expand">exec</a>.
+
+bc. @exec("macro1")
+
+See also "Define and execute Macro":user_guide#macro
+
+h3. <a name="expand">expand</a>
+
+Expand an "macro":#macro. AKA <a href="#exec">exec</a>.
+
+bc. @expand("macro1")
+
+See also "Define and execute Macro":user_guide#macro
+
+h3. <a name="extends">extends</a>
+
+Makes the template inherit another template.
+
+bc. @extends(main)
+
+or
+
+bc. @extends("main")
+
+You can pass parameter to extended template if the there are arguments declared.
+
+Suppose you have a parent template defined as:
+
+bc. @args String style;
+<div class="panel @style">
+    @doLayout()
+</div>
+
+And in your extending template, you pass the argument style as:
+
+bc. @extends(panel, style: "span4")
+
+or pass by position:
+
+bc. @extends(panel, "span4")
+
+h3. <a name="debug">debug<a>
+
+You can use @debug@ tag to output debug message to your log file or screen:
+
+bc. @debug("this is a debug message for %s", myvar)
+
+h3. <a name="for">for</a>
+
+Use @for@ to iterate a collection of objects. The syntax is the same as for loop in Java language:
+
+bc. <ul>
+@for (Product product: products) {
+    <li>@product</li>
+}
+</ul>
+
+<a name="loop_variables"></a>
+
+The <code>@for</code> tag defines implicit variables in it's body. The variable names are prefixed with loop variable name:
+
+* @name_index@, the item's index, start with 1
+* @name_isFirst@, true for the first element
+* @name_isLast@, true for the last element
+* @name_parity@, alternates between @odd@ and @even@
+* @name__isOdd@, true if the current element is odd in sequence
+* @name_size@, the size of the collection
+* <img src="http://www.naccas.org/_layouts/1033/images/new.gif" style="border: none !important"> @name_sep@, "," if the current loop is not at the last item
+* <img src="http://www.naccas.org/_layouts/1033/images/new.gif" style="border: none !important"> @name_utils@, the loop utils object
+
+bc. <ul>
+@for (Product product: products) {
+    <li class="@product_parity">@product_index. @product</li>
+    @product_sep
+}
+</ul>
+
+h4. <a name="loop_utils">Loop Utils object</a>
+
+If you need a special item separator other than the default @xx_sep@, you can use @xx_utils@ object:
+
+bc. @for(String s: strList) {
+    @s_utils.sep(",")
+    @s_utils.preSep(",")
+    @s_utils.postSep(",")
+}
+
+in the above example, <code>@s_utils.sep(",")</code> is the same as <code>@s_sep</code> and <code>@s_utils.postSep(",")</code>, which output a comma if the current loop is *NOT* at the last item. <code>@s_utils.preSep(",")</code> output a comma if the current loop is not at the first item. This feature is very helpful when you want to print a list of items separated by a certain separator.
+
+p(note). If you refer to a local variable inside the loop, you need to make sure they are declared as @final@:
+
+bc. @{
+ String foo = "foo";
+ final String bar = foo;
+}
+@for(MyModel model: myModels) {
+    <p>@bar</p> @// this is okay
+    <p>@foo</p> @// this line will cause compilation error
+    ...
+}
+
+<a name="for_second_form">You can also use the second form of <code>@for</code> tag:</a>
+
+bc. @for(int i = 0; i < 6; ++i) {
+    <li>the current index is @i</li>
+}
+
+p(note). You don't have access to loop variables if you use the second <code>@for</code> loop form.
+
+h3. <a name="get">get</a>
+
+Retrieves value defined with a "set":#set tag. You may use the get/set mechanism to exchange values between templates, layouts and sub-templates.
+
+bc. <head>
+    <title>@get("title")</title>
+</head>
+
+You can provide a default value in the following way, which will display "Homepage", if title has not been specified:
+
+bc. <head>
+    <title>@get("title": "Homepage")</title>
+</head>
+
+h3. <a name="if">if-else-if</a>
+
+Evaluates a given test, and if true, evaluate the tag body. The syntax is the same as @if@ clause in Java language
+
+bc. @if ("en".equals(user.countryCode)) {
+    Connect user is @user
+}
+
+You can also use @else@ clause:
+
+bc. @if (null != user) {
+    Connected user is @user
+} else {
+    Please log in
+}
+
+or @else if@ clause
+
+bc. @if (tasks.size() > 1) {
+    Busy tasklist
+} else if (tasks.size() > 0) {
+    One task in the list
+} else {
+    Nothing to do
+}
+
+h3. <a name="import">import</a>
+
+Import package or class.
+
+bc. @import java.awt.*, java.io.*,...
+
+or declare import statements in multiple lines (start from 1.0.0-RC7):
+
+bc. @import {
+    java.awt.*, java.io.*
+    static java.lang.Math.*
+    ...
+}
+
+h3. <a name="include">include</a>
+
+Do an inline @include@ a template into the current template:
+
+bc. @include("common.utils")
+
+See "Include other templates":user_guide#include section for details
+
+h3. <a name="invoke">invoke</a>
+
+Enable dynamic tag invocation:
+
+bc. @invoke("designer." + platform).ignoreNonExistsTag()
+
+See "Dynamic tag invocation":user_guide#dynamic_tag_invocation section for details4
+
+h3. <a name="jsaction">jsAction</a>
+
+<code>@jsAction()</code> is a play specific tag that returns a JavaScript function which constructs a URL based on a server action and free variables. It does not perform an AJAX request; these have to be done by hand using the returned URL.
+
+Let’s see an example:
+
+bc. GET     /users/{id}        Users.show
+
+Now you can import this route client side:
+
+bc. <script type="text/javascript">
+    @assign("showUserUrl"){@url(Users.show(":id"))}
+    var showUserAction = @jsAction(showUserUrl)
+    var displayUserDetail = function(userId) {
+        $('userDetail').load( showUserAction({id: userId}) )
+    }
+</script>
+
+Note at the moment <code>@jsAction()</code> tag in PlayRythm is no as convenient to use as the groovy <code>#{jsAction /}</code> tag that you must use a special <code>@assign</code> statement to get the url reverse lookup result before passing it to the <code>@jsAction()</code> tag:
+
+bc. @assign("showUserUrl"){@url(Users.show(":id"))}
+var showUserAction = @jsAction(showUserUrl)
+
+It's desired the syntax could be simplified as:
+
+bc. var showUserAction = @jsAction(Users.show(":id")) @// note this has NOT been implemented yet!
+
+h3. <a name="macro">macro</a>
+
+Define a template macro.
+
+bc. @macro() {
+    macro content
+}
+
+See also <a href="#exec"><code>@exec</code></a> and "Define and execute Macro":user_guide#macro
+
+h3. <a name="nocompact">nocompact</a>
+
+Mark a block of template to be output NOT in compact mode without regarding to the "global compact setting":integration#configuration.
+
+bc. @nocompact() {
+All content here will be output
+in nocompact mode.
+}
+
+The above code will output the following content:
+
+bc. All content here will be output
+in compact mode
+
+See also "compact":#compact.
+
+h3. <a name="renderBody">renderBody</a>
+
+AKA @doBody@, @renderBody@ -is an alias of "doLayout":#doLayout.- is used to render the tag body.
+
+bc. @renderBody()
+
+<a name="renderBody_with_params">If tag body is supplied along with <a href="#callback">@callback@</a> extension, then you can pass parameters into @renderBody@ call:</a>
+
+bc. @renderBody(user.role)
+
+or by name:
+
+bc. @renderBody(role: user.role)
+
+h3. <a name="render">render</a>
+
+AKA @renderSection@ and @doLayout@, used with template inheritance, this tag inserts the evaluated sub-template’s contents defined with <a href="#section">@section@</a> tag
+
+bc. <div id="sidebar">
+    @render("sidebar")
+</div>
+
+When no section name specified this tag output the layout content:
+
+bc. @render() @// also @doLayout(), same effect as groovy's #{doLayout/}
+
+<a name="default_section_content"></a>
+
+Start from v1.0.0 Rythm support define default content for section:
+
+bc. <div id="footer">
+    @renderSection("footer") {
+        @// here we define default content for footer section
+        @// if sub template failed to supply this section then
+        @// the default content will be output instead
+        <p>Site footer - &copy; Santa Clause</p>
+    }
+</div>
+
+h3. <a name="return">return</a>
+
+Abort the template execution and return to caller:
+
+bc. @if(!user.isAdmin()) {
+	@return
+}
+<p class="admin-panel">...
+
+h3. <a name="section">section</a>
+
+Define a block of template to be output in parent template's named section.
+
+bc. @section("sidebar") {
+    <ul>
+        <li><a href="#">Link one</li>
+        <li><a href="#">Link two</li>
+    </ul>
+}
+
+h3. <a name="set">set</a>
+
+Define a value which can be retrieved in the same template or any layout with the "get":#get tag.
+
+bc. @set(title: "Admin")
+@set(style: "span6")
+
+You can use any expression in @set@ tag
+
+bc. @set(title:"Profile of " + user.login)
+
+Unlike "set":http://www.playframework.org/documentation/1.2.4/tags#set tag in Groovy template engine, Rythm @set@ tag does not accept tag body. You can use "section":#section tag to achieve the same result.
+
+h3. <a name="tag">tag</a>
+
+Alias of <a href="#def"><code>@def()</code></a>
+
+p(note). <code>@tag</code> is not used to invoke a tag. Check the "user guide":user_guide#invoke_tag to see how to invoke a tag.
+
+h3. <a name="this">this</a>
+
+Call the current template itself as a tag
+
+bc. @args int max, int i, int j
+@i @if (j < max) {
+    @{
+        int t = i;
+        i = j;
+        j = i + t;
+    }
+    , @this(max, i, j)　@// recursively call to this template
+} else {
+    <hr/>
+　
+    <h3>Fibonacci tag template source</h3>
+    <pre>
+        @(getTemplateClass(false).getTemplateSource())
+    </pre>
+　
+    <h3>Fibonacci tag java source</h3>
+    <pre>
+        @(getTemplateClass(false).javaSource)
+    </pre>
+}
+
+h3. <a name="raw">raw</a>
+
+Mark a block of template code that by default output raw data for expression:
+
+bc. @{
+    String title = "<h1>title</h1>";
+    String body = "<p>some news</p";
+}
+@raw() {
+    @title
+    @body
+}
+
+The above code has the same effect as below
+
+bc. @{
+    String title = "<h1>title</h1>";
+    String body = "<p>some news</p>";
+}
+@title.raw()
+@body.raw()
+
+h3. <a name="ts">ts</a>
+
+Output timestamp in place
+
+bc. now is @ts() @// produce somethign like "now is 134325875435"
+
+h3. <a name="verbatim">verbatim</a>
+
+Define a block of code that not to be parsed by Rythm.
+
+bc. @verbatim() {
+    OK, anything inside this block is not parsed: @someTag, @someExpression, etc
+}
+
+h3. <a name="__simple__">@__simple__@</a>
+
+Mark the current template as a **simple** template. A simple template is slightly faster than normal template and has the following constraint:
+
+* Doesn't have "implicit imports":user_guide#implicit_import
+* Doesn't have "implicit objects":user_guide#implicit_object
+* Cannot "extends":#extends other templates
+
+h2. PlayRythm Configuration
+
+PlayRythm provides all default configuration settings that cater for most common use cases.
+
+|_. configuration |_. description |_. default value|
+|@rythm.mode@|set rythm template engine to run in dev or prod mode|the value of play.mode|
+|@rythm.compactOutput@|remove redundant space and line breaks|true in prod mode and false in dev mode|
+|@rythm.enableJavaExtensions@|enable "Java extension parsing":user_guide#java_extension|true|
+
+h2. <a name="resource">See Also</a>
+
+# "Integrate PlayRythm into your Play project":integration
+# "Rythm Template User guide":user_guide

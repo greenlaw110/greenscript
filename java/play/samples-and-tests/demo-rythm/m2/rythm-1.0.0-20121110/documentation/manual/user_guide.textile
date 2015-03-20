@@ -1,0 +1,940 @@
+h1. PlayRythm User Guide
+
+PlayRythm provides an alternative template processing engine for Play!Framework. The template engine uses Java as an expression language. A powerful tag system allows you to create reusable functions.
+
+p(note). Unless marked explicitly, the content documented here also applies to using Rythm separately in a pure Java computing context (i.e. non-play environment).
+
+h2. <a name="syntax">Template Syntax</a>
+
+A template file is a text file, some parts of which have placeholders for dynamically generated content. The template’s dynamic elements are written using the Java language.
+
+Dynamic elements are resolved during template execution. The rendered result is then sent as part of the HTTP response.
+
+p(note). All template elements are started with the <code>@</code> caret.
+
+If you want to output a literal "<code>@</code>" character, you need to double it. E.g.
+
+bc. This is an email address in template: someone@@gmail.com
+
+h3. <a name="comment">Comments</a>
+
+one line comment start with <code>@//</code>
+
+bc. @// this is one line comment
+
+multiple lines comment are put inside <code>@ * * @</code> block. yes it is the same as the new scala template
+
+bc. @*
+    this is a multiple line comment.
+    The text inside this block will be ignore by Rythm template processor
+*@
+
+h3. <a name="expression">Expressions</a>
+
+bc. @user.name @// evaluate user's name property and print it out
+@user.getName(), @// call a method on an object and print out the result
+
+The bracket "( )" can be used to compose complicated expressions or to separate an expression from other part of the template:
+
+bc. @(1 + 5) @// print out the result of 1 + 5
+@(user.name)_and_some_other_string @// use ( ) to separate expression from other part of the template
+
+h4. <a name="nullable_expression">Null safe expression</a>
+
+You can use @?@ to create null safe expression:
+
+bc. @foo?.bar?.bee()
+
+The above expression will not throw out @NullPointerException@ if @foo@ or @foo.bar@ is null.
+
+p(note). You cannot embed null safe expression into parameters like <code>@foo?.bar(@x?.y)</code>
+
+h4. <a name="properties_enhancement">Properties enhancement</a>
+
+This is Play-Rythm specific feature. To make it consistent with Play convention, calling to an application class instance public property will automatically get translated to the corresponding get/set method:
+
+bc. @myModel.name //@ equals to @myModel.getName()
+@{myModel.name = "foo"} //@ equals to @{myModel.setName("foo")}
+
+p(note). *Properties enhancement* is NOT like JavaBean invokation as documented in "Velocity Case Subsitituion":http://velocity.apache.org/engine/releases/velocity-1.7/user-guide.html#Case_Substitution. It only happen when your model has a public field called "name", otherwise the above statement will fail.
+
+h4. <a name="escape">Escape an expression</a>
+
+-Unlike Groovy template which all expressions are escaped by default, Rythm template won't do that due to performance concern. You must explicitly call @escape@ java object extension to escape the variable:-
+
+Start from v1.0, PlayRythm escape expressions automatically as html format if the template file name suffix is ".html". To output an expression by raw data, one can do:
+
+bc. @myVar.raw()
+
+If you have a block of code that you would like to turn of the default escape behavior, you can use
+
+bc. @raw() {
+    echo @myVar @// this will not be escaped
+}
+
+In addition to HTML escape, PlayRythm provides escape to the following format as well:
+
+# @CSV@: escape as csv format
+# @JS/JavaScript@: escape as javascript format
+# @Java@: escape as Java format
+# @XML@: escape as XML format
+
+And the user can use to these format like follows:
+
+bc. @{String s = "<a><b>foo</b></a>"}
+@escape("XML") {
+ @s
+}
+
+You can also use JavaExtensions to escape variable directly
+
+bc. @s.escapeXml()
+
+Corresponding JavaExtension methods to escape formats are:
+
+# @CSV@: @escapeCsv()@
+# @HTML@: @escapeHtml()@
+# @Java@: @escapeJava()@
+# @JavaScript@: @escapeJavaScript()@
+
+h3. <a name="call_build-in_function">Call built-in function</a>
+
+<code>@</code> is also used to invoke built-in functions. Built-in function could be treated as special type of tags. From the user's perspective there is no difference between calling a built-in function and calling a tag (either built-in or custom)
+
+bc. @// indicate this template extends "/main.html" template
+@extends(main)
+　
+@// declare the java package/classes needed in this template
+@import play.util.*, play.templates.*
+　
+@// declare arguments used in this template
+@args String name, int score
+　
+@// output some information for debugging purpose
+@debug("the variable is %s", someVariable)
+
+There are more than a dozen of built-in functions defined in Rythm, please go to "Reference":reference for details
+
+h3. <a name="call_tag">Call user defined tag</a>
+
+Again <code>@</code> can be used to call a user defined tag:
+
+bc. @greenscript("app<jqueryui<jquery", all:true)
+
+p(note). The "tag" in Rythm is kind like "macro" in Velocity and WebMacro, which provides a way to enable template content reuse at runtime. However Rythm tag facility are more powerful than macro in Velocity and FreeMarker. See "Tag invocation":#invoke_tag for more information. In addition, Rythm (start from 1.0 RC5) provides <a href="reference#macro"><code>@macro</code></a> and <a href="reference#exec"><code>@exec</code></a> for parsing time content reuse.
+
+h3. <a name="nameconflict">Tag or expression?</a>
+
+Because Rythm template engine use the same caret <code>@</code> for both expression evaluation and tag invocation, there might be name conflict between invoking a tag and evaluating an expression. However in most cases this conflict could avoid. Suppose you have a tag file named @hello.html@, and you have a template defined with @hello@ variable declared:
+
+bc. @args String hello;
+@hello  @// this will evaluate the hello variable
+@hello() @// this will invoke hello tag
+
+But consider another case, when you have a tag file @hello.html@ defined in a folder named @who@, and you happened to have a variable named @who@ in a type @Who@ which has a method named @hello@, then
+
+bc. @args Who who
+@who.hello() @// name conflict happened here!
+
+In the above code, rythm will not evaluate the method @hello@ of variable @who@, instead the @who.hello@ tag is invoked.
+
+h3. <a name="scripting">Scripting</a>
+
+Use <code>@{...}</code> to include arbitrary java source code into your template:
+
+bc. @{
+    String fullName = client.name.toUpperCase() + " " + client.forname;
+}
+<h1>Client @fullName</h1>
+
+A script can write dynamic content directly using @p()@ function:
+
+bc. @{
+    String fullName = client.name.toUpperCase() + " " + client.forname;
+    p("<h1>").p(fullName).p("</h1>");
+}
+
+Bear in mind that a template is not a place to do complex things. So, use a tag when you can, or move the computations into the controller or the model object.
+
+h2. <a name="template_content_decoration">Process template content with decoration functions</a>
+
+Rythm 1.0 provides a useful feature to allow you to further process template content using decoration functions:
+
+* "Mark a template block to output raw expression":reference#raw
+* "Mark a template block to escape expression using specific type":reference#escape
+* "assign a block of template content into a variable":reference#assign
+* "cache a template block":reference#cache
+
+h2. <a name="tag_introduction">Tag in Rythm</a>
+
+Tag in Rythm is a powerful tool to reuse your template design. In Velocity and FreeMarker reusing is achieved via a tool named Macro. A Macro is roughly equals to "inline tag":#inline_tag provided in Rythm. Tag, however is much more powerful than it, and here enumerate some of the Tag advantages over Macro
+
+* Can be defined in a template or a "Java class":#java_tags
+* Like an ordinary java source code, the namespace is managed by the source path, thus no need to understand another namespace scheme.
+* Can "extends":#inheritance another template
+* The invocation can be "decorated":#tag_invoke_decoration and you do whatever you want with tag invocation result ("Cache":#tag_invocation_cache, "Escape":#tag_invocation_escape, "Assign":#tag_invocation_assign and "chain them together":#chain_tag_invocation_decoration)
+* Can "callback tag body":#callback_tag_body with "pre-defined parameters":#callback_tag_body_with_params, looks like a double dispatch, isn't?
+** In FreeMarker you get callback via nested content and limited callback params support via loop variables
+** Velocity users, we are sorry to you
+* Invoke controller action method as tag (Play specific)
+
+So check more on
+* "Tag invocation":#invoke_tag
+* "Tag creation":#custom_tag
+
+h2. <a name="invoke_tag">Tag invocation</a>
+
+**Tag** is a powerful tool to reuse your template definition in Rythm. To invoke a tag, use <code>@</code> plus tag name and brace
+
+bc. @// call greenscript.js tag using parameters to declare a list of javascript files and output them all
+@greenscript.js("app<jqueryui<jquery", all:true)
+　
+@// call verbatim tag with a tag body instead of parameters
+@verbatim() {
+    the content within verbatim body will not get parsed by Rythm
+    @foo.bar()
+}
+
+p(note). You must append @()@ to tag name even it does not require any parameter. The only exception to this rule is <a href="reference#return"><code>@return</code></a>, <a href="reference#break"><code>@break</code></a> and <a href="reference#continue"><code>@continue</code></a>. Because these three are Java reserved words and one cannot use them as variable/method names.
+
+p(note). [Tip] You can recursively call the current tag with <a href="reference#this"><code>@this</code></a> directive.
+
+h3. <a name="call_tag_relative_path">Call tag using relative and import path</a>
+
+Start from v1.0 you were able to invoke tag use relative path and import path. So suppose you have the following file system structure:
+
+bc. \---app
+    \---rythm
+        |   tag1.html
+        |
+        +---Application
+        |   |   index.html
+        |   |   tagA.html
+        |   |
+        |   \---bar
+        |           tagB.html
+        |
+        \---foo
+            |   tag2.html
+            |
+            \---zee
+                    tag3.html
+
+Now inside your @app/rythm/Application/index.html@, you call those tags like follows:
+
+bc. @Application.tagA() @// full path invocation
+@Application.bar.tagB() @// full path invocation
+@tagA() @// relative path invocation
+@bar.tagB() @// relative path invocation
+
+You can also save typing by using <code>@import</code> path:
+
+bc. @import foo.*
+　
+@foo.tag2() @// full path invocation
+@foo.zee.tag3() @// full path invocation
+@tag2() @// import path invocation
+@zee.tag3() @// import path invocation
+
+imports and relative path also apply to "action invocation":#invoke_action:
+
+bc. @import controllers.*
+　
+@Application.index()
+
+p(note). To use import path you must explicitly import the packages, "implicit imports":#Implicitimportstatements has no effects.
+
+h3. <a name="pass_parameter_to_tag">Passing arguments to tag</a>
+
+Suppose you have defined a tag file hello.html:
+
+bc. @args String title, String who
+　
+Hello @title @who
+
+And in another template you want to invoke hello.html. Like groovy template, you can pass an argument to a tag by name:
+
+bc. @hello(title = "Mr.", who = "Green")
+
+or this is also good:
+
+bc. @hello(title: "Mr.", who: "Green")
+
+<img src="http://www.naccas.org/_layouts/1033/images/new.gif" style="border: none !important">Start from v1.0.0-20120808 you can have line breaks inside parameters:
+
+bc. @hello(
+    title: "Mr",
+    who: "Green")
+
+<img src="http://www.naccas.org/_layouts/1033/images/new.gif" style="border: none !important">Or using JavaScript style:
+
+bc. @hello({
+    title: "Mr",
+    who: "Green"
+})
+
+Unlike groovy template, you are free to pass arguments to tag by position in Rythm template:
+
+bc. @hello("Mr.", "Green")
+
+Or even a mix of both:
+
+bc. @hello("Mr.", who: "Green")
+
+p(note). "Controller action invocation":#invoke_action is a special kind of tag invocation. However you should *NOT* pass arguments by name when you invoke a controller action, instead, *always pass argument by position when you invoke a controller action*
+
+h3. <a name="invoke_tag_with_body">Call a tag with body</a>
+
+To invoke tag with a body, just use the common @{ }@ to include the body content:
+
+bc. @greenscript.js() {
+    $(function(){
+        // do whatever needed
+    })
+}
+
+Tag body is called "nested content" in FreeMarker.
+
+p(note). Passing body to a "controller action invocation":#invoke_action has no effect.
+
+h4. <a name="tag_invocation_callback">Pass body callback parameter spec to tag call</a>
+
+With the introduction of <a href="reference#callback">@callback@</a> extension, Rythm make it possible to pass in parameters when callback tag body:
+
+bc. @lookupRole(permission: "superuser").callback(List<Role> roleList) {
+    <ul>superusers
+    @for(Role role: roleList) {
+        <li>role.getName()</li>
+    }
+    </ul>
+}
+
+and in your @lookupRole@ tag:
+
+bc. @args String permission
+　
+@{
+    List<Role> roles = Role.find("permission", permission).asList()
+}
+renderBody(roles)
+
+p(note). Although @callback@ could be used with a "controller action invocation":#invoke_action, however since there will be no way to callback a tag body, it will not function anyway
+
+h3. <a name="tag_invoke_decoration">Tag invocation decoration</a>
+
+Rythm 1.0 add a feature called tag invocation decoration which allows you to manipulate the tag invocation result:
+
+* "Escape tag invocation result":#tag_invocation_escape
+* "Cache tag invocation result":#tag_invocation_cache
+* "Assign tag invocation result to a template variable":#tag_invocation_assign
+* "Pass body callback spec to tag call":#tag_invocation_callback
+* "Chain tag invocation decoration together":#chain_tag_invocation_decoration
+
+p(note). Tag invocation decoration feature is also available to an arbitrary template block via the <a href="reference#chain"><code>@chain</code></a> built-int tag
+
+p(note). Tag invocation decoration features only process runtime result and thus is NOT available to <a href="reference#include"><code>@include</code></a> built-in tag because it is evaluated at parsing time and executed at code generating time. For the same reason they are not applicable to <a href="#inline_tag">Inline tags</a> because inline tags are actually member functions of the underline template class, calling to inline tag are static linked.
+
+h3. <a name="tag_invocation_escape">Escape tag invocation result</a>
+
+It is possible to escape tag invocation result using specific format
+
+bc. @myTag().escape("csv")
+
+p(note). escape tag invocation result is different from escape a template block contain the tag invocation.
+
+bc. @escape("csv") {
+    @myTag()
+}
+
+The above code makes sure all expressions output within @myTag@ call will be escaped using "csv" format, while <code>@myTag().escape("csv")</code> ensure the tag invocation result itself get escaped.
+
+h3. <a name="tag_invocation_cache">Cache tag invocation result</a>
+
+Start from v1.0 you can cache tag invocation result easily
+
+bc. @myTag(1, 2, "3").cache() @// cache using default TTL, which is 1 hour
+@myTag(1, 2, "3").cache("1h") @// cache invocation result for 1 hour
+@myTag(1, 2, "3").cache(60 * 60) @// cache invocation result for 1 hour
+
+The above statement invoke tag @myTag@ using parameter [1, 2, "3"] and cache the result for one hour. Within the next one hour, the tag will not be invoked, instead the cached result will be returned if the parameter passed in are still [1, 2, "3"].
+
+So you see Rythm is smart enough to cache tag invocation against tag name and the parameter passed in. If the tag has body, the body will also be taken into consideration when calculating the cache key.
+
+In some cases where the tag invocation result is not merely a function of the tag, parameter and body, but also some implicit variables, where you might expect different result even you have completely the same signature of tag invocation. Rythm provide way for you to take those additional implicit variable into account when calculating the cache key:
+
+bc. @{User user = User.current()}
+@myTag(1, 2, "3").cache("1h", user.isAdmin())
+
+The above statement shows how to pass additional parameter to cache decoration.
+
+p(note). Also refer to <a href="reference#cache">@cache</a> keyword for more on cache parameters
+
+h3. <a name="tag_invocation_assign">Assign tag invocation result</a>
+
+With @.assign()@ extension it can assign the tag invocation result to a template variable for further processing or delayed output:
+
+bc. @tagX().assign("xResult")
+
+Now you have a template variable @xResult@ contains the content of @tagX@ tag. You can process it and output it later on:
+
+bc. @xResult.toLowerCase().raw()
+
+You can assign tag execution result to a final variable by passing additional parameter to assign extension:
+
+bc. @tagX().assign("xResult", true)
+
+The benefit of final variable is that you can use it directly inside <a href="reference#for"><code>@for</code></a> loop.
+
+h3. <a name="chain_tag_invocation_decoration">Chain tag invocation decoration functions</a>
+
+It is possible to chain tag invocation extension functions in one statement:
+
+bc. @tagX().raw().cache("1h").assign("xResult").callback(String name) {
+    echo @name
+}
+
+h3. <a name="dynamic_tag_invocation">Dynamic tag invocation</a>
+
+Dynamic tag invocation means the tag to be invoked is determined by a runtime variable, in this case, one can use <code>@invoke</code> keyword as shown below:
+
+bc. @args String platform @// could be pc, iphone, ipad ...
+...
+@invoke("designer." + platform)
+
+So when @platform@ is iphone, the above case has the same effect as calling <code>@designer.iphone()</code>.
+
+Usually when a tag been invoked cannot be found, Rythm will report an error. Sometimes it is expected that certain template/tag does not exists, in which case one can use @.ignoreNonExistsTag()@ extension with <code>@invoke@</code> keyword:
+
+p(note). <a href="call_tag_relative_path">Relative path/import path invocation</a> and <a href="tag_invocation_cache">cache</a> features also available to <code>@invoke</code> tag invocation
+
+bc. @invoke("designer." + platform).ignoreNonExistsTag()
+
+h3. <a name="invoke_action">Invoke controller action method (Play specific)</a>
+
+It's possible to invoke controller action method directly from within the template and fill the render result content in place:
+
+bc. @controllers.MyPortal.welcomePanel()
+
+The above statement will invoke the controller <code>@controller.MyPortal</code>'s action method @welcomePanel@, and fill the render result content in place of the statement
+
+<a name="invoke_action_cache"></a>
+
+p(note). Because controller action invocation are treated as tag invocation, therefore caching tag invocation result also applies to controller action invocation. Please refer to "Cache tag invocation result":user_guide#tag_invocation_cache for details
+
+p(note). See "integration guide":integration#action for more detail about invoking controller action method
+
+h2. <a name="custom_tag">Create tags</a>
+
+You can easily create specific tags for your application. **Every template can be invoked as a tag**. The template’s file path start from template root (in Play context it's app/rythm) mapped into tag name by striping off the file extension and converting all path separator @/@ into the dot @.@.
+
+For example suppose you have a template with the following content located at @app/rythm/util/hello.html@:
+
+bc. Hello from tag!
+
+From the any other template or even the template itself you can invoke the template as a tag:
+
+bc. @util.hello() @// the brace () is a must to call a tag
+
+h3. Retrieve tag parameters
+
+Tag parameters are exposed as template variables which declared using <code>@args</code> tag.
+
+For example:
+
+bc. @args String name
+Hello @name !
+
+And you can pass the name parameter to the tag:
+
+bc. @util.hello(name: "Bob")
+
+or to pass parameter by position:
+
+bc. @util.hello("Bob")
+
+h3. <a name="callback_tag_body">Callback tag body</a>
+
+If your tag supports a @body@, you can include it at any point in the tag code, using the <a href="reference#renderBody"><code>@renderBody()</code></a> keyword.
+
+For example:
+
+bc. Hello @doBody()! @// or Hello @renderBody()!
+
+And you can then pass the name as tag body:
+
+bc. @util.hello() {
+   Bob
+}
+
+h4. <a name="callback_tag_body_with_params">Callback tag body with parameters</a>
+
+Rythm v1.0 support a new feature to callback tag body with parameters:
+
+bc. @doBody("superuser")
+
+See "Invoke tag with body":#invoke_tag_with_body to see how to invoke a tag which will callback body with parameters
+
+p(note). Invoking a tag is different from callback tag body. The former is used by app developer (tag consumer) and the latter is used by tag developer (tag producer)
+
+h3. <a name="content-negotiation">Pickup tag file based on content format</a>
+
+Like groovy template, you can have different versions of tag for different "content types":http://www.playframework.org/documentation/1.2.4/routes#content-types:
+
+bc. // javascript code to request a html page
+$.get("/ui/userManager", function(data) {
+   $('#manager-panel').html(data);
+})
+　
+// javascript code to request a JSON data
+$.getJSON("/data/userList", function(data)) {
+   model.users = ko.mapping.fromJS(data);
+}
+
+Suppose both request will result in a tag invocation <code>@user.list()</code> in the template code as below:
+
+bc. //@ template code
+@args List<User> users
+...
+@user.list()
+...
+
+When you have normal html page request, Rythm will try to look for @app/rythm/user/list.html@ file when doing the tag invocation. If the request is for a json data, Rythm will pickup @app/rythm/user/list.json@ first. If the preferred tag file cannot be found, then Rythm look for tag file for other formats in the following sequence:
+
+# *.html
+# *.json
+# *.xml
+# *.csv
+# *.tag
+
+h2. <a name="inline_tag">Define inline tags</a>
+
+Rythm provides inline tag definition to achieve a lightweight and light speed reuse method in one template.
+
+bc. @def sayHello(String who, String title) {
+  <p>Hello, @title @who</p>
+}
+
+And in the same template you can call the tag defined as usual:
+
+bc. @for (User user: users) {
+  @sayHello(user.name, user.title)
+}
+
+Inline tag definition is some how like "helper":http://weblogs.asp.net/scottgu/archive/2011/05/12/asp-net-mvc-3-and-the-helper-syntax-within-razor.aspx tool in Razor engine. With the <a href="#include"><code>@include</code></code></a> you can easily "reuse inline tag definition across multiple templates":#reuse_inline_tag
+
+p(note). Normal "tag invocation decoration":#tag_invoke_decoration functions cannot be used on inline tag directly. But there are corresponding workaround for each decoration function to use:
+
+bc. @myInlineTag().cache("3h") @// this is NOT okay
+@// the following is good
+@cache("3h") {
+    @myInlineTag()
+}
+
+bc. @myInlineTag().raw().assign("myResult") @// this is NOT okay
+@// the following is good
+@chain().raw().assign("myResult") {
+    @myInlineTag()
+}
+
+p(note). You cannot pass argument by name when invoking inline tag. *ALWAYS pass parameter to inline tag by position*:
+
+bc. @myInlineTag(varName: "value") @// this will cause compilation error
+@myInlineTag("value") @// this is okay
+
+h3. <img src="http://www.naccas.org/_layouts/1033/images/new.gif" style="border: none !important"><a name="inline_tag_return_type">Define return type of inline tag</a>
+
+Starting from v1.0.0-RC9 it can define return type of the inline tag:
+
+<pre><code>@def boolean isMobile() {
+    <strike>@{</strike> [script block no longer needed for inline tag with return type other than *void*]
+        UserAgent ua = getRenderArg("userAgent");
+        return ua.isMobile();
+    <strike>}</strike>
+}</code></pre>
+
+And later on it can be used as:
+
+bc. @if (isMobile()) {
+   @mobileTag()
+} else {
+   @pcTag()
+}
+
+So this actually the scope from defining an inline tag to defining a reusable method. This feature allows developer to actually extends a template class and greatly improve the reusability.
+
+The cool part of this feature is it allows developer to define inline tag in the parent (layout) template and used in the descendant templates. Furthermore, the inline tag method is also available to templates which "included":reference#include the template defined it.
+
+<a name="break-change-in-inline-tag-definition"></a>
+
+p(note). Start from version 1.0.0-20121103, if an inline tag has return type other than @void@, the code inside tag body shall NOT be enclosed with <code>@{"</code>, @}@ pair. And Rythm is now intelligent to determine whether an inline tag is defined with return type of not, and hence makes proper process to the handling code:
+
+bc. @def foo() {
+<p>Foo</p>
+}
+@def String bar() {
+return "bar"
+}
+@foo() @// output foo() in generated code
+@bar() @// output p(bar()) in generated code
+
+h2. <a name="java_tags">Custom Java tags</a>
+
+Honestly creating Java tag is not so important in Rythm as it is in Groovy because Rythm template is running so fast that it is almost like a handwriting StringBuilder appended java code. However you might still want to do it because the logic in that tag is complicated and it is more easier to code in a Java source code than in a text template source.
+
+There are 2 ways to creating Custom Java tags.
+
+h3. <a name="fast_tags">The old Play FastTags approach (Play specific)</a>
+
+PlayRythm provides a bridge to intercept a rythm tag call to FastTags call. So you are free to continue define FastTags as you did for Groovy template. See http://www.playframework.org/documentation/1.2.4/templates#fasttags for more details on how to create FastTags.
+
+p(note). Developer cannot use all stuffs in FastTags. The constraints include @Closure@ parameter and @TagContext@ etc.
+
+h3. <a name="rythm_java_tag">Implement Java Tag using Rythm's new Java Tag interface (Play specific)</a>
+
+Another approach is to implement Java Tag using Rythm's new @com.greenlaw110.rythm.play.FastRythmTag@:
+
+bc. import com.greenlaw110.rythm.play.FastRythmTag;
+　
+@play.templates.FastTags.Namespace("") // yes, you use the same Namespace annotation in Rythm Fast Tag definition
+public class authenticityToken extends FastRythmTag {
+    @Override public void call(ParameterList params, Body body) {
+        p("<input type=\"hidden\" name=\"authenticityToken\" value=\"" + Scope.Session.current().getAuthenticityToken() + "\">");
+    }
+}
+
+The above code shows how to implement Play's authenticityToken tag in Rythm.
+
+h4. Pros and Cons of the two approach
+
+The good side of FastTags approach is it's compatible to Groovy template, and thus should be welcome by module developers who don't need a PlayRythm copy to get their code compileds and distributed.
+
+The only tiny problem with FastTags is that it uses reflection to lookup the method to be called, which might be a little bit more time consuming than using Rythm's tag interface
+
+h3. <a name="pure_rythm_java_tag">Create Java Tag in non-play environment
+
+Pure rythm user can also implement Java based Tag easily:
+
+# Create a Java class, say MyTag, extends @com.greenlaw110.rythm.template.JavaTagBase@
+# Call @RythmEngine.registerTag(JavaTagBase)@ interface to register your Java tag class
+
+bc. /**
+ * The Hello tag accept a name and output "hello @name"
+ */
+public class Hello extends com.greenlaw110.rythm.template.JavaTagBase {
+　　
+    public Hello() {
+    }
+　　
+    @Override
+    public String getName() {
+        return "hello";
+    }
+　　
+    @Override
+    public void call(ITag.ParameterList params, Body body) {
+        Object o = params.getDefault();
+        String name = null == o ? "who" : o.toString()
+        p("Hello ").p(name);
+    }
+}
+...
+// register your java tag somewhere in your bootstrap code
+Rythm.engine.registerTag(new Hello());
+
+To use the Hello tag in your template file:
+
+bc. @hello("Rythm")
+
+And it outputs:
+
+bc. Hello Rythm
+
+h2. <a name="include">Include other templates</a>
+
+Rythm support include other template inline:
+
+bc. @include("foo.bar")
+
+The above statement will put the content of template @foo.bar@ in place. "foo.bar" is translate into file name following "tag invocation":#call_tag_relative_path convention.
+
+The difference between <code>@include("foo.bar")</code> a tag and call the tag via <code>@foo.bar()</code> is the former put the content of the template into the current template inline, while the latter invoke the template specified. It is some how like @#include@ vs. function call in c language. <code>@include</code> is super fast to reuse part of template because it suppress the function invocation at runtime. It's a **inline** function call if you speak c++. In other words, <code>@include</code> process happen at template parsing time, while tag invocation happen at template executing time.
+
+Things you can achieve with <code>@include</code> but not tag invocation:
+
+* Reuse "inline tag":inline_tag definition
+
+Things you can achieve with tag invocation but not <code>@include</code>
+
+* "Passing parameters":#pass_parameter_to_tag
+* Layout management via "template inheritance":#inheritance
+
+p(note). If you switch tag invocation to <code>@include</code> and found something has changed even there is no parameter call it might because you have <code>@extended</code> layout template in the tag template. <code>include</code> will NOT be able to include the layout template parts
+
+Because <code>@include</code> are parsed at parsing time therefore it's not possible to include template dynamically as shown below:
+
+bc. @// spec could be one of facebook, google
+@args String spec
+　
+@include("page." + spec) @// THIS WON'T WORK
+@invoke("page." + spec) @// THIS WORKS!
+
+It is also not possible to apply "Java invocation decorations":#tag_invoke_decoration to <code>@include()</code> for the same reason.
+
+bc. @include("my.common.tag.lib").cache().assign("someVariable").raw() @// THIS WON'T WORK
+@my.common.tag.lib().cache().assign("someVariable").raw() @// this works
+@// the following also works
+@chain().cache().assign("someVariable").raw() {
+    @include("my.common.tag.lib")
+}
+
+h3. <a name="reuse_inline_tag">Reuse inline tag across multiple views</a>
+
+A good feature provided with <code>@include</code> is that you can import the "inline tag":#inline_tag definition from the template been included into the current template:
+
+Suppose you have created a template named @app/rythm/util.html@ with a set of inline tags:
+
+bc. @tag hi (String who) {
+    Hi @who
+}
+　
+@tag bye (String who) {
+    Bye @who
+}
+
+Now in your normal template you can import all the inline tags [hi, bye] and call them like a local function:
+
+bc. @include("util")
+@hi("rythm")
+@bye("rythm")
+
+p(note). While <code>@tag</code> provides an alternative to "Helper":http://weblogs.asp.net/scottgu/archive/2011/05/12/asp-net-mvc-3-and-the-helper-syntax-within-razor.aspx in Razor, the <code>@include</code> provides an alternative to _*Reusing @helpers across multiple views*_. See Scott's "blog":http://weblogs.asp.net/scottgu/archive/2011/05/12/asp-net-mvc-3-and-the-helper-syntax-within-razor.aspx and search for "reusing @helpers across multiple views"
+
+h2. <a name="macro">Define and execute Macro</a>
+
+Like <code>@include</code>, macro provides a way to reuse template content at parsing time, but inside a template file. Suppose you defined a macro called "myMacro":
+
+bc. @macro("myMacro") {
+content inside myMacro
+}
+
+Later on in the same template file you can invoke "macro-1" using the following code:
+
+bc. @exec("myMacro")
+
+which produce the following output:
+
+bc. content inside myMacro
+
+At first glance this effect could be achieved using "inline tag":##inline_tag or even <a href="reference#assign">assignment</a>. However they are fundamentally different in that macro executing happen at parsing time while tag invocation and assignment are happened at runtime, which could result in subtle differences of content been rendered. Let's take a look at the following code:
+
+bc. @macro("foo") {
+    <foo>
+        <bar>abc</bar>
+    </foo>
+}
+@compact() {@exec("foo")}
+@nocompact() {@exec("foo")}
+
+So the above code will display "foo" content in "compact":reference#compact and "nocompact":reference#nocompact mode. If we change the implementation to:
+
+bc. @assign("foo") {
+    <foo>
+        <bar>abc</bar>
+    </foo>
+}
+@compact() {@foo}
+@nocompact() {@foo}
+
+The result will not be expected. The reason is assignment will evaluate the content at runtime, and when "foo" content is assigned, the content is already produced and later on calling it in <code>@compact</code> and <code>@nocompact</code> block will not make any change. For the same reason the following code works neither:
+
+bc. @def foo() {
+    <foo>
+        <bar>abc</bar>
+    </foo>
+}
+@compact() {@foo()}
+@nocompact() {@foo()}
+
+p(note). Macro will be expanded at parsing time, therefore it is very fast at runtime but will generate larger class byte codes, furthermore macro will guaranteed to be executed when invoked with <code>@exec</code>, this is unlike <code>@assign</code>, which is executed for only once when assignment happen.
+
+h3. <a name="other-methods-execute-macro">Other methods to execute macro</a>
+
+You can also use <a href="reference#expand"><code>@expand</code></a> to execute macro:
+
+bc. @expand(myMacro)
+
+<img src="http://www.naccas.org/_layouts/1033/images/new.gif" style="border: none !important"> Start from v1.0.0-20120719 you can invoke macro like invoke a tag:
+
+bc. @myMacro()
+
+p(note). Macro has higher priority than tag. Meaning if you have both "foo" macro and "foo" tag defined, <code>@foo()</code> will invoke foo macro instead of foo tag
+
+
+h2. <a name="inheritance">Template inheritance</a>
+
+Template inheritance is a good way to implement template layout management.
+
+bc. @// this type of extended template declaration is deprecated: @extends("main.html")
+@extends("main")
+<h1>Some code</h1>
+
+The @main@ template is the layout template, you can use the @doLayout@ tag to include the content of the declaring template:
+
+bc. <h1>Main template</h1>
+<div id="content">
+    @doLayout()
+</div>
+
+p(note). -You can also use @renderBody@ in place of @doLayout@ to include the content, which comes from Razor.- @render@ or @renderSection@ without section name specified does the same thing with <code>@doLayout()</code>
+
+You can even specify the default content if the sub template does not have any content provided:
+
+bc. <h1>Main template</h1>
+<div id="content">
+    @doLayout() {
+        default content
+    }
+</div>
+
+h3. <a name="extended_template_path">Extended template lookup</a>
+
+Before PlayRythm v1.0 you follow the same rule as groovy @#extends@ tag, i.e. you need to pass the full path to extended template file starting from @app/rythm@ folder: <code>@extends("main.html")</code>
+
+Since v1.0 you have a clean and simple way to declare extended template, i.e. the way to declare a tag invocation. For example, if you want to extend @app/rythm/layout/foo/bar.html@, you can declare the extend statement as <code>@extends("layout.foo.bar")</code>.
+
+The "relative path and include path declaration":user_guide#call_tag_relative_path feature are also available:
+
+bc. @import layout.foo.*
+@extends("bar")
+
+See "Call tag using relative and import path":user_guide#call_tag_relative_path for more information on path lookup
+
+p(note). Because extends are parsed statically you can omit the quotation mark when declaring extended templates:
+
+bc. @extends(main)
+@extends(layout.foo.bar)
+
+h3. <a name="define_section">Define section and output section</a>
+
+Like Razor, Rythm provides a section concept to enable you to define sections in sub templates and output them in parent template.
+
+In your layout template, say @main.html@:
+
+bc. <!DOCTYPE html>
+<html>
+<head>
+...
+</head>
+<body>
+  <div id="header">
+    <h1>@get("title')</h1>
+  </div>
+　
+  <div id="sidebar">
+    @// render "sidebar" section
+    @render("sidebar")
+  </div>
+　
+  <div id="content">
+    @// render main content
+    @render() @// or doLayout()
+  </div>
+　
+  <div id="footer">
+    @render("footer") {
+        @// here we define default content for footer section
+        @// if sub template failed to supply this section then
+        @// the default content will be output instead
+        <p>Site footer - &copy; Santa Clause</p>
+    }
+  </div>
+</body>
+</html>
+
+And in your working template, say 'index.html':
+
+bc. @extends(main)
+@set(title="Home page")
+　
+<h2>Welcome to my site</h2>
+<p>This is our home page</p>
+<p>Not super exciting is it?</p>
+<p>Yada, Yada, Yada</p>
+　
+@section("sidebar") { @// define "sidebar" section
+  <p>This sidebar has "Home Page" specific content</p>
+  <ul>
+    <li><a href="#">Link One</a></li>
+    <li><a href="#">Link Two</a></li>
+    <li><a href="#">Link Three</a></li>
+  </ul>
+}
+
+<a name="default_section"></a>In the above example people with sharp eyes can notice that the @footer@ section render in the layout template is different from the @sidebar@ section in that we supplied a default content to the former. So if user did not define the @footer@ section in the sub template, the default content will be output instead. This is an new feature available in v1.0
+
+h2. <a name="java_extension">Java object extensions in templates</a>
+
+Rythm template provides limited support for "Java object extensions":http://www.playframework.org/documentation/1.2.4/templates#extensions.
+
+# You are allowed to use most Java object extensions defined in Play's @play.templates.JavaExtensions.
+# Java object extensions can only be processed when they are in the end of an expression
+
+bc. <ul>
+@for(Product product: products) {
+    <li>@product.name. Price: @product.price.format("## ###,00") €</li>
+}
+</ul>
+
+The following expressions will not work because Java object extension ".escape()" is used in the middle of the expression.
+
+bc. @(myVal.escape() + myVal2.toString())
+@someString.escape().length()
+
+However you can chain java object extensions like:
+
+bc. @myVal.escape().capAll()
+
+In the above expression, java object extension @capAll@ and @escape@ is chained together and both of they will be processed.
+
+h3. <a name="custom-java-extension>Customized Java object extension</a>
+
+Start from Rythm 1.0.0-RC5, you can use application defined Java extensions. Refer to the "play documentation":http://www.playframework.org/documentation/1.2.4/templates#extensions to understand how to define application java extensions.
+
+h2. <a name="implicit_object">Implicit objects available in a template</a>
+
+Unlike Play's Groovy template that all objects added to the renderArgs scope are directly injected as template variables, you must declare them (and might need to import their class packages) to use them freely in your template. PlayRythm plugin automatically declare and set the following implicit objects so that you don't need to do these job before using them:
+
+|| Variable || Description || API documentation || See also ||
+| @errors@ | Validation errors | "play.data.validation.Validation.errors()":/@api/play/data/validation/Validation.html#errors%28%29 | "Validating HTTP data":validation |
+| @flash@ | Flash scope | "play.mvc.Scope.Flash":/@api/play/mvc/Scope.Flash.html  | "Controllers - Session & Flash Scope":controllers#session |
+| @lang@ | The current language (in java.lang.String) | "play.i18n.Lang":/@api/play/i18n/Lang.html | "Setting up I18N - Define languages":i18n#languages |
+| @messages@ | The messages map | "play.i18n.Messages":/@api/play/i18n/Messages.html | "Setting up I18N - Externalize messages":i18n#messages |
+| @params@ | Current parameters | "play.mvc.Scope.Params":/@api/play/mvc/Scope.Params.html  | "Controllers - HTTP parameters":controllers#params |
+| @_play@ | Main framework class | "play.Play":/@api/play/Play.html |  |
+| @request@ | The current HTTP request | "play.mvc.Http.Request":/@api/play/mvc/Http.Request.html  |  |
+| @session@ | Session scope | "play.mvc.Scope.Session":/@api/play/mvc/Scope.Session.html  | "Controllers - Session & Flash Scope":controllers#session |
+| @_response_encoding@ | encoding of the response object | "play.mvc.Http.Response":/@api/play/mvc/Http.Response.html | |
+| @_renderArgs@ | the renderArgs object | "play.mvc.Scope.RenderArgs":/@api/play/mvc/Scope.RenderArgs.html | |
+| @_rythmPlugin@ | the RythmPlugin instance | @com.greenlaw110.rythm.play.RythmPlugin@ | |
+| @_rythm@ | the rythm template engine instance | @com.greenlaw110.rythm.RythmEngine@ | |
+
+So as you can see most of these implicit variables are the same as those defined in "Groovy templates":http://localhost:9000/@documentation/modules/play/user_guide#Implicitobjectsavailableinatemplate. The only exception is Groovy's implicit variable @play@ has been renamed to @_play@. The reason for this is I want to allow user to use full qualified classes in play.* package.
+
+p(note). If you have put something into your @RenderArgs@, and you didn't declare it using <code>@args</code> statement, you are still able to access it via @getRenderArg()@ method. But please be noted that all stuff you get via @getRenderArg()@ call are @Object@ type, and you need to explicitly cast them before accessing properties and methods of them:
+
+bc. @(((User)getRenderArg("user")).getName())
+
+h2. <a name="implicit_import">Implicit import statements</a>
+
+PlayRythm automatically insert the following import statements so that user can reference relevant classes without write manually <code>@import</code> statement:
+
+# @java.util.*@
+# @java.io.*@
+# @controller.*@
+# @models.*@
+# @play.templates.JavaExtensions@
+
+h2. <a name="resource">See also</a>
+
+# %(next)"References manual":reference%
+# "Integrate PlayRythm into your Play project":integration

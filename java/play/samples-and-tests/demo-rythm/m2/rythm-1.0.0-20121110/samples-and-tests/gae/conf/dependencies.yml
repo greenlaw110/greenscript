@@ -1,0 +1,11 @@
+# Application dependencies
+require:
+    - play -> gae 1.6.0
+    - play-rythm -> play-rythm
+
+repositories:
+    - local:
+        type: local
+        artifact: ${application.path}/../../../[module]
+        contains:
+            - play-rythm

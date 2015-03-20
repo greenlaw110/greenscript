@@ -93,7 +93,7 @@ public class GreenScriptPlugin extends PlayPlugin {
         defProps_.setProperty("greenscript.minimize", Play.mode == Mode.PROD ? "true" : "false");
         defProps_.setProperty("greenscript.compress", Play.mode == Mode.PROD ? "true" : "false");
         defProps_.setProperty("greenscript.cache", Play.mode == Mode.PROD ? "true" : "false");
-        defProps_.setProperty("greenscript.cache.inmemory", "true");
+        defProps_.setProperty("greenscript.cache.inmemory", "false");
         defProps_.setProperty("greenscript.less.enabled", "false");
         defProps_.setProperty("greenscript.coffee.enabled", "false");
         defProps_.setProperty("greenscript.inline.process", "false");

@@ -1,0 +1,9 @@
+.LV_validation_message {
+	padding-left: 1em;
+} 
+.LV_invalid {
+    color: red;
+}
+.LV_valid {
+    color: green;
+}

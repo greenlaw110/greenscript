@@ -1,0 +1,75 @@
+h1. PlayRythm module documentation
+
+Welcome to *PlayRythm module* documentation. This documentation is intended for the *1.0.0-20121110 release* and might be significantly differ from previous module version's documentation.
+
+Check the "version history":history.
+
+h2. PlayRythm features
+
+PlayRythm is yet another template engine plugin for Play!Framework 1.2x version:
+
+# Static and strong typed pure Java template. Yes it's like "Japid":http://www.playframework.org/modules/japid and "Jamon":http://www.jamon.org
+# "Razor":http://weblogs.asp.net/scottgu/archive/2010/07/02/introducing-razor.aspx like syntax
+# Easy to "integrate with Play":integration and migrate your groovy template one by one
+## Your existing "controllers":http://www.playframework.org/documentation/1.2.4/controllers doesn't need to be changed
+## Your existing "mailers":http://www.playframework.org/documentation/1.2.4/emails#mvc doesn't need to be changed
+## Once an new template file under @app/rythm@ folder created in the corresponding path, Rythm will take over; all other "groovy templates":http://www.playframework.org/documentation/1.2.4/templates still works
+## Great Error reporting on parsing, compilation and excuting errors, using Play-2.0 style!
+# Automatic "escape":user_guide#escape expression output, like "Groovy":http://www.playframework.org/documentation/1.2.4/templates and unlike "Japid":http://www.playframework.org/modules/japid-0.9.3.4/home#JavaExpressionexpressionandexpression
+# High performance at "Japid level":http://www.playframework.org/modules/japid
+# Support "layout":user_guide#inheritance and "tag":user_guide#custom_tag, you get all you have in Groovy template, actually even "more":user_guide#inline_tag
+# (Play specific) Support "FastTags":user_guide#fast_tags and "JavaExtensions":user_guide#java_extension with "constraints":https://github.com/greenlaw110/Rythm/issues/37
+# (Play specific) Support "properties enhancement":user_guide#properties_enhancement to template class
+# "Tag invocation decorations":user_guide#tag_invoke_decoration and "chain":user_guide#chain_tag_invocation_decoration them together
+# "Template content decorations":user_guide#template_content_decoration and "chain":reference#chain them together
+# (Play specific) "Invoke controller action method":user_guide#invoke_action directly from within your template
+# "Include other template inline":user_guide#include (not the same as tag invocation)
+# (Play specific) New <a href="integration#cache4">@Cache4@</a> annotation to mark on controller action method
+# (Play specific) "Support GAE":integration#configuration and other PaaS like Heroku
+# <img src="http://www.naccas.org/_layouts/1033/images/new.gif" style="border: none !important"><a href="string_interpolation">String Interpolation Mode</a>
+# <img src="http://www.naccas.org/_layouts/1033/images/new.gif" style="border: none !important"><a href="to_string">ToString Mode</a>
+
+p(note). There is "a live demo app":http://play-rythm-demo.appspot.com running on GAE for your reference
+
+h2. Template Syntax at a glance
+
+Based on Rythm template engine, PlayRythm module provides an easy to read/write template language which is very like that is used in .Net MVC's "Razor template engine":http://razorengine.codeplex.com/. Here is one rythm template example:
+
+bc. @extends(main)
+@args List<User> users
+...
+<ul>
+@for(User user: users) {
+    @if (!user.disabled()) {
+        <li class="@user_parity">
+            <span>@user_index</span>
+            <a href="@url(User.show(user.getId()))">@user.getName()</a>
+        </li>
+    }
+}
+</ul>
+
+h2. Use PlayRythm template engine (Play specific)
+
+h4. 1. Add PlayRythm into your @conf/dependencies.yml@ file:
+
+bc. # Application dependencies
+   require:
+       - play -> rythm
+
+p(note). Don't forget run @play deps --sync@ to download rythm module after you updated your @conf/dependencies.yml@ file
+
+h4. 2. Create the template file in @app/rythm@ folder.
+
+The layout of the folder should be the same as your @app/views@ folder.
+
+Rythm can stay with your groovy templates. Suppose you have a controller action @Application.index()@, if you have @Application/index.html@ file put into @app/rythm@ folder, then Rythm template engine will execute it. If not then your @Application/index.html@ file in @app/views@ folder will be picked up and processed by Groovy template engine. Please refer to "Integration Guide":integration for more information
+
+h2. <a name="resource">See Also</a>
+
+# %(next)"Integrate PlayRythm into your Play project":integration%
+# "User's guide":user_guide
+# "Reference manual":reference
+# "String interpolation mode":string_interpolation
+# "To string mode":to_string
+# "Auto to string mode":auto_to_string
